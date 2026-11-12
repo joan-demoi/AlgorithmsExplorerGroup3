@@ -546,4 +546,11 @@ public class AlgorithmExplorer extends JFrame {
             }));
         }
     }
+
+    //Arthur you will place your code right below this comment.
+    //respect that curly bracket below. do not put any code outside it. all code should be within
+    //it. it is for the main class.
+
+    //your code block is ArrayView - the row of boxes that the stack and queues are drawn
+    //with.
 }

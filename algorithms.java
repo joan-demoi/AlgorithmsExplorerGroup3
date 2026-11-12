@@ -223,7 +223,208 @@ public class AlgorithmExplorer extends JFrame{
             }
         }
         //Precious you'll start your code block from here, the one of Tower of Hanoi
-        
+
+// Tower of Hanoi: the back end works out all the moves and this panel replays them one by one so you can watch the disks move.
+static class HanoiPanel extends JPanel {
+
+// Controls at the top
+JSpinner diskSpinner = new JSpinner(new SpinnerNumberModel(3, 1, 8, 1));
+JComboBox<String> sourceBox = new JComboBox<>(new String[]{"A", "B", "C"});
+JComboBox<String> destBox = new JComboBox<>(new String[]{"A", "B", "C"});
+JComboBox<String> auxBox = new JComboBox<>(new String[]{"A", "B", "C"});
+JSlider speedSlider = new JSlider(1, 10, 5);
+
+// Things we show on screen
+HanoiBoard board = new HanoiBoard(); // written in Block 5
+JTextArea movesList = makeOutputArea();
+JLabel counterLabel = new JLabel(" Press Reset, then Start.");
+
+// The solution and where we are in it
+Backend.Hanoi solution; // all the moves, worked out by the back end
+int currentMove; // how many moves have been shown so far
+int diskCount; // number of disks in the current game
+
+// The three pegs. pegs[p][k] is the disk at position k on peg p (0 = bottom).
+// pegHeights[p] is how many disks are on peg p right now.
+int[][] pegs = new int[3][8];
+int[] pegHeights = new int[3];
+
+Timer timer; // calls stepOnce() again and again while the animation runs
+
+HanoiPanel() {
+super(new BorderLayout());
+
+// Start with A -> C using B as the helper peg
+destBox.setSelectedIndex(2);
+auxBox.setSelectedIndex(1);
+
+timer = new Timer(300, e -> stepOnce());
+speedSlider.addChangeListener(e -> updateSpeed());
+
+// Top bar with all the controls
+JPanel topBar = new JPanel();
+topBar.add(new JLabel("Disks (1-8):"));
+topBar.add(diskSpinner);
+topBar.add(new JLabel("Source:"));
+topBar.add(sourceBox);
+topBar.add(new JLabel("Destination:"));
+topBar.add(destBox);
+topBar.add(new JLabel("Auxiliary:"));
+topBar.add(auxBox);
+topBar.add(makeButton("Start", e -> start()));
+topBar.add(makeButton("Pause / Step", e -> pauseOrStep()));
+topBar.add(makeButton("Reset", e -> reset()));
+topBar.add(new JLabel("Speed:"));
+topBar.add(speedSlider);
+
+// List of moves on the right side
+JScrollPane movesScroll = new JScrollPane(movesList);
+movesScroll.setPreferredSize(new Dimension(270, 100));
+
+// Move counter at the bottom
+counterLabel.setFont(counterLabel.getFont().deriveFont(Font.BOLD, 14f));
+
+add(topBar, BorderLayout.NORTH);
+add(board, BorderLayout.CENTER);
+add(movesScroll, BorderLayout.EAST);
+add(counterLabel, BorderLayout.SOUTH);
+
+reset();
+}
+
+// Higher slider value = shorter delay between moves = faster animation
+void updateSpeed() {
+timer.setDelay(1500 / speedSlider.getValue());
+}
+
+// Sets up a fresh game with all the disks on the source peg
+void reset() {
+timer.stop();
+
+int source = sourceBox.getSelectedIndex();
+int dest = destBox.getSelectedIndex();
+int aux = auxBox.getSelectedIndex();
+
+// The three pegs must all be different
+if (source == dest || source == aux || dest == aux) {
+counterLabel.setText(" Source, destination and auxiliary must be three DIFFERENT pegs.");
+solution = null;
+return;
+}
+
+diskCount = (Integer) diskSpinner.getValue();
+solution = new Backend.Hanoi(diskCount, source, dest, aux); // the recursion happens in the back end
+currentMove = 0;
+
+// Empty all three pegs
+for (int p = 0; p < 3; p++) {
+pegHeights[p] = 0;
+}
+
+// Put every disk on the source peg, biggest at the bottom
+for (int k = 0; k < diskCount; k++) {
+pegs[source][k] = diskCount - k;
+}
+pegHeights[source] = diskCount;
+
+board.setState(pegs, pegHeights, source, dest, aux);
+showMoveList();
+updateCounter();
+}
+
+// Writes every move into the text box on the right
+void showMoveList() {
+StringBuilder text = new StringBuilder();
+
+for (int i = 0; i < solution.count; i++) {
+char fromPeg = (char) ('A' + solution.from[i]);
+char toPeg = (char) ('A' + solution.to[i]);
+text.append((i + 1) + ". Move disk " + solution.disk[i]
++ " from " + fromPeg + " to " + toPeg + "\n");
+}
+
+movesList.setText(text.toString());
+movesList.setCaretPosition(0); // scroll back to the top
+}
+
+// "Start" button: runs the animation automatically
+void start() {
+// If there is no game yet, or the last one has finished, begin a new one
+if (solution == null || currentMove >= solution.count) {
+reset();
+}
+if (solution == null) {
+return; // the peg choice was invalid
+}
+
+updateSpeed();
+timer.start();
+}
+
+// "Pause / Step" button: pauses if running, otherwise does one single move
+void pauseOrStep() {
+if (timer.isRunning()) {
+timer.stop();
+} else {
+stepOnce();
+}
+}
+
+// Does ONE move: takes the top disk off one peg and puts it on another
+void stepOnce() {
+if (solution == null) {
+reset();
+}
+if (solution == null) {
+return;
+}
+
+// Nothing left to do
+if (currentMove >= solution.count) {
+timer.stop();
+return;
+}
+
+int fromPeg = solution.from[currentMove];
+int toPeg = solution.to[currentMove];
+
+// Lift the top disk off the "from" peg...
+pegHeights[fromPeg]--;
+int disk = pegs[fromPeg][pegHeights[fromPeg]];
+
+// ...and drop it on the "to" peg
+pegs[toPeg][pegHeights[toPeg]] = disk;
+pegHeights[toPeg]++;
+
+currentMove++;
+if (currentMove == solution.count) {
+timer.stop();
+}
+
+updateCounter();
+board.repaint();
+}
+
+// Updates the text at the bottom, e.g. " Moves: 3 / 7 (2^3 - 1 = 7)"
+void updateCounter() {
+int total = (1 << diskCount) - 1; // 2^n - 1
+
+String text = " Moves: " + currentMove + " / " + total
++ " (2^" + diskCount + " - 1 = " + total + ")";
+
+if (currentMove == solution.count) {
+if (currentMove == total) {
+text += " DONE: total moves = 2^n - 1 \u2713";
+} else {
+text += " (mismatch!)";
+}
+}
+
+counterLabel.setText(text);
+}
+}
+
+//Joan start from here        
 
     
 }

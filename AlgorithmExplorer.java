@@ -495,6 +495,58 @@ counterLabel.setText(text);
         }
     }
 
+    // DATA STRUCTURES TAB AND THE SHARED BASE PANEL
 
+    //DATE STRUCTURES
+    static class DataStructuresTab extends JTabbedPane {
+        DataStructuresTab(){
+            addTab("Stack", new StackPanel());
+            addTab("Linear Queue", new QueuePanel());
+            addTab("Circular Queue", new QueuePanel());
+            addTab("Stringly Linked List", new ListPanel());
+            addTab("Doubly Linked List", new ListPanel());
+            addTab("Bracket Checker", new BracketPanel());
+        }
+    }
+    static abstract class StructPanel extends JPanel {
+
+        JLabel messageLabel = new JLable(" Ready.");
+        JPanel controls;
+        JComponent centerView;
+
+        //view - the drawing for this structure
+        //columns - how many columns the controls row has
+
+        StructPanel(JComponent view, int columns) {
+            super(new BorderLayout());
+            centerView = view;
+
+            controls = new JPanel(new GridLayout(0, columns, 4, 4));
             
+            messageLabel.setFont(messageLabel.getFont().deriveFont(Font.BOLD, 14f));
+            messageLabel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
+
+            add(controls, BorderLayout.NORTH);
+            add(view, BorderLayout.CENTER);
+            add(messageLabel, BorderLayout.SOUTH);
+        }
+
+        abstract void refresh(); //each panel redraws its own structure here
+
+        void say(String text) {
+            messageLabel.setText("" + text); //shows a message on the bottom line
+        }
+
+        void addOperation(String label, Runnable action) {
+            controls.add(makeButton(label, e -> {
+                try {
+                    action.run();
+                } catch (RunTImeException ex) {
+                    messageLabel.setText("\ u26a0 " + ex.getMessage());
+                }
+                refresh();
+            }));
+        
+        }          
+    }
 }

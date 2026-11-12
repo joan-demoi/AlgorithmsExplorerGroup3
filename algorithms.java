@@ -222,7 +222,6 @@ public class AlgorithmExplorer extends JFrame{
                     output.setText("Input problem: " + ex.getMessage());
             }
         }
-        //Precious you'll start your code block from here, the one of Tower of Hanoi
 
 // Tower of Hanoi: the back end works out all the moves and this panel replays them one by one so you can watch the disks move.
 static class HanoiPanel extends JPanel {
@@ -424,7 +423,78 @@ counterLabel.setText(text);
 }
 }
 
-//Joan start from here        
+// ===== BLOCK 5: Module A - Tower of Hanoi drawing board =====
 
-    
+    // Draws the three pegs and the disks. It only DRAWS what HanoiPanel tells it;
+    // it never moves any disks itself.
+    static class HanoiBoard extends JPanel {
+
+        int[][] pegs;                       // same arrays that HanoiPanel uses
+        int[] pegHeights;
+        String[] roles = new String[3];     // "source", "destination" or "auxiliary" for each peg
+
+        // Called by HanoiPanel.reset() to give the board the new game
+        void setState(int[][] pegs, int[] pegHeights, int source, int dest, int aux) {
+            this.pegs = pegs;
+            this.pegHeights = pegHeights;
+
+            roles[source] = "source";
+            roles[dest] = "destination";
+            roles[aux] = "auxiliary";
+
+            repaint();
+        }
+
+        // Swing calls this automatically whenever the board needs to be redrawn
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+
+            // Nothing to draw until the first game has been set up
+            if (pegs == null) {
+                return;
+            }
+
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);   // smooth edges
+
+            int width = getWidth();
+            int baseY = getHeight() - 50;     // the y position of the ground
+            int pegWidth = width / 3;         // each peg gets one third of the width
+
+            for (int p = 0; p < 3; p++) {
+                int centerX = pegWidth * p + pegWidth / 2;
+
+                // The pole, the base plate and the label under it
+                g2.setColor(Color.DARK_GRAY);
+                g2.fillRect(centerX - 4, baseY - 230, 8, 230);
+                g2.fillRect(centerX - pegWidth / 2 + 10, baseY, pegWidth - 20, 6);
+
+                String label = (char) ('A' + p) + " (" + roles[p] + ")";
+                g2.drawString(label, centerX - 40, baseY + 28);
+
+                // The disks on this peg, from the bottom one upwards
+                for (int k = 0; k < pegHeights[p]; k++) {
+                    int disk = pegs[p][k];
+
+                    // Bigger disk number = wider disk
+                    int diskWidth = 30 + disk * (pegWidth - 60) / 9;
+                    int y = baseY - (k + 1) * 24;     // every disk is 24 pixels tall
+
+                    // Each disk gets its own colour, filled first and then outlined
+                    g2.setColor(Color.getHSBColor(disk / 9f, 0.55f, 0.95f));
+                    g2.fillRoundRect(centerX - diskWidth / 2, y, diskWidth, 22, 10, 10);
+
+                    g2.setColor(Color.BLACK);
+                    g2.drawRoundRect(centerX - diskWidth / 2, y, diskWidth, 22, 10, 10);
+
+                    // The disk number written in the middle
+                    g2.drawString(String.valueOf(disk), centerX - 3, y + 16);
+                }
+            }
+        }
+    }
+
+
+            
 }

@@ -685,5 +685,116 @@ public class AlgorithmExplorer extends JFrame {
         }
     }
     //Precious, place your code here, it is about linked lists
+
+
+
     
+
+    //Joan, Place your code here
+
+
+
+
+
+
+    
+    //The SortingTab
+    //It is a very big class so we split it into two blocks
+    //FIRST HALF - its fields and the constructor which lays out the screen
+
+    static class SortingTab extends JPanel {
+
+        //inputs at the top
+      JTextField inputField = new JTextField("64, 34, 25, 12, 22, 11, 90, 5", 32);
+      JTextField randomCountField = new JTextField("10", 5);
+      JComboBox<String> algorithmBox = new JComboBox<>(Backend.NAMES); 
+
+      //whats seen on screen
+        SortView view = new SortView();
+        JLabel noteLabel = new JLabel("");     //describes the current step
+        JLabel metricsLabel = new JLabel("");    //comparisons, swaps and time
+
+        
+         // The recorded steps of the current sort. Each step is called a "frame".
+        int[][] frames;               // frames[i] = how the array looks at step i
+        int[] highlightStarts;        // the green range at step i (from...)
+        int[] highlightEnds;          // (...to)
+        String[] notes;               // a sentence describing step i
+        int frameCount;               // how many frames there are
+        int currentFrame;             // which frame is on screen now
+
+        String preparedKey = "";      // remembers which input and algorithm the frames were made for
+        Timer autoTimer;              // moves to the next frame while auto-play is running
+
+        // The table for "Compare all"
+        DefaultTableModel compareModel = new DefaultTableModel(
+                new String[]{"Algorithm", "Comparisons", "Swaps / moves", "Time (ms)", "Sorted correctly?"}, 0);
+
+        SortingTab() {
+            super(new BorderLayout());
+
+            // Auto-play: every 600 ms show the next frame, and stop at the last one
+            autoTimer = new Timer(600, e -> {
+                if (currentFrame < frameCount - 1) {
+                    currentFrame++;
+                    showFrame();
+                } else {
+                    autoTimer.stop();
+                }
+            });
+
+            // ---- First row: the numbers, random generator and algorithm choice ----
+            JPanel row1 = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            row1.add(new JLabel("Numbers:"));
+            row1.add(inputField);
+            row1.add(new JLabel("Random n:"));
+            row1.add(randomCountField);
+            row1.add(makeButton("Generate random", e -> guard(() -> generateRandom())));
+            row1.add(new JLabel("Algorithm:"));
+            row1.add(algorithmBox);
+
+            // ---- Second row: the control buttons ----
+            JPanel row2 = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            row2.add(makeButton("Run (show result)", e -> guard(() -> runAndShowResult())));
+            row2.add(makeButton("Step >", e -> guard(() -> stepForward())));
+            row2.add(makeButton("Auto-play / Stop", e -> guard(() -> toggleAutoPlay())));
+            row2.add(makeButton("Reset", e -> resetPlayback()));
+            row2.add(makeButton("Compare all", e -> guard(() -> compareAll())));
+
+            // Put the two rows on top of each other at the top of the tab
+            JPanel topArea = new JPanel(new GridLayout(2, 1));
+            topArea.add(row1);
+            topArea.add(row2);
+            add(topArea, BorderLayout.NORTH);
+
+            // ---- Middle: the bars, with the step note and the metrics under them ----
+            noteLabel.setFont(noteLabel.getFont().deriveFont(Font.BOLD, 13f));
+
+            JPanel statusArea = new JPanel(new GridLayout(2, 1));
+            statusArea.add(noteLabel);
+            statusArea.add(metricsLabel);
+
+            JPanel middleArea = new JPanel(new BorderLayout());
+            middleArea.add(view, BorderLayout.CENTER);
+            middleArea.add(statusArea, BorderLayout.SOUTH);
+
+            // ---- Bottom: the compare table on the left, the complexity table on the right ----
+            JTable compareTable = new JTable(compareModel);
+            JTable infoTable = new JTable(Backend.INFO,
+                    new String[]{"Algorithm", "Best", "Average", "Worst", "Extra space", "Stable?"});
+
+            JSplitPane bottomSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
+                    new JScrollPane(compareTable), new JScrollPane(infoTable));
+            bottomSplit.setResizeWeight(0.45);
+            bottomSplit.setPreferredSize(new Dimension(100, 190));
+
+            // The middle area on top, the two tables underneath
+            JSplitPane mainSplit = new JSplitPane(JSplitPane.VERTICAL_SPLIT, middleArea, bottomSplit);
+            mainSplit.setResizeWeight(0.75);
+            add(mainSplit, BorderLayout.CENTER);
+        }
+
+        //the animation part - preparing the sort, stepping tyhrough it, auto play and "compare all"
+        
+    }
 }

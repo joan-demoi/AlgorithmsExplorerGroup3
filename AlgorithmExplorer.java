@@ -900,7 +900,152 @@ public class AlgorithmExplorer extends JFrame {
         }
     }
     
-    //Precious, place your code here, it is about linked lists. it is the list Panel
+    // ===== BLOCK 11: Module B - Linked list panel (singly and doubly) =====
+
+    // Linked list: one panel for BOTH list types.
+    // doubly = false gives a singly linked list, doubly = true gives a doubly linked list.
+    static class ListPanel extends StructPanel {
+
+        final Backend.LList list;                                // the real list, from the back end
+        JTextField valueField = new JTextField("", 4);
+        JTextField targetField = new JTextField("", 4);          // used by the "before/after target" buttons
+        ListView view;                                           // the drawing in the middle
+
+        ListPanel(boolean doubly) {
+            super(new ListView(), 7);
+            view = (ListView) centerView;
+
+            // Make the right kind of list depending on which tab this is
+            if (doubly) {
+                list = new Backend.DLinkedList();
+            } else {
+                list = new Backend.SLinkedList();
+            }
+
+            // Controls row: the two text boxes
+            controls.add(new JLabel(" Value:"));
+            controls.add(valueField);
+            controls.add(new JLabel(" Target element:"));
+            controls.add(targetField);
+
+            // Insert buttons
+            addOperation("Insert at beginning", () -> insertAtBeginning());
+            addOperation("Insert at end", () -> insertAtEnd());
+            addOperation("Insert before target", () -> insertBeforeTarget());
+            addOperation("Insert after target", () -> insertAfterTarget());
+
+            // Delete buttons
+            addOperation("Delete at beginning", () -> say("Deleted " + list.deleteBegin() + " from the beginning"));
+            addOperation("Delete at end", () -> say("Deleted " + list.deleteEnd() + " from the end"));
+            addOperation("Delete before target", () -> deleteBeforeTarget());
+            addOperation("Delete after target", () -> deleteAfterTarget());
+            addOperation("Delete value", () -> deleteValue());
+
+            // Search, size and display buttons
+            addOperation("Search value", () -> searchValue());
+            addOperation("Size", () -> say("Size = " + list.size));
+            addOperation("Display forward", () -> say("Forward: " + joinValues(list.toArray(), " -> ") + " -> null"));
+
+            // Only a doubly linked list can be read backwards
+            if (doubly) {
+                addOperation("Display backward", () -> say("Backward: " + joinValues(list.toArrayBackward(), " -> ") + " -> null"));
+            }
+
+            refresh();
+        }
+
+        // ---- Reading the two text boxes ----
+
+        int readValue() {
+            return readInt(valueField, "Value", -999999, 999999);
+        }
+
+        int readTarget() {
+            return readInt(targetField, "Target element", -999999, 999999);
+        }
+
+        // ---- Insert operations ----
+
+        void insertAtBeginning() {
+            int value = readValue();
+            list.insertBegin(value);
+            say("Inserted " + value + " at the beginning");
+        }
+
+        void insertAtEnd() {
+            int value = readValue();
+            list.insertEnd(value);
+            say("Inserted " + value + " at the end");
+        }
+
+        void insertBeforeTarget() {
+            int value = readValue();
+            int target = readTarget();
+            list.insertBefore(target, value);
+            say("Inserted " + value + " before " + target);
+        }
+
+        void insertAfterTarget() {
+            int value = readValue();
+            int target = readTarget();
+            list.insertAfter(target, value);
+            say("Inserted " + value + " after " + target);
+        }
+
+        // ---- Delete and search operations ----
+
+        void deleteBeforeTarget() {
+            int target = readTarget();
+            int deleted = list.deleteBefore(target);
+            say("Deleted " + deleted + " (the element before " + target + ")");
+        }
+
+        void deleteAfterTarget() {
+            int target = readTarget();
+            int deleted = list.deleteAfter(target);
+            say("Deleted " + deleted + " (the element after " + target + ")");
+        }
+
+        void deleteValue() {
+            int value = readValue();
+            list.deleteValue(value);
+            say("Deleted " + value);
+        }
+
+        void searchValue() {
+            int value = readValue();
+            int position = list.search(value);    // -1 means "not found"
+
+            if (position < 0) {
+                say(value + " was not found");
+            } else {
+                say(value + " found at position " + position + " (0 = head)");
+            }
+        }
+
+        // ---- Helpers ----
+
+        // Turns {1, 2, 3} into "1 -> 2 -> 3" (or "(empty)" if there is nothing in it)
+        String joinValues(int[] numbers, String separator) {
+            if (numbers.length == 0) {
+                return "(empty)";
+            }
+
+            StringBuilder text = new StringBuilder();
+            for (int i = 0; i < numbers.length; i++) {
+                if (i > 0) {
+                    text.append(separator);
+                }
+                text.append(numbers[i]);
+            }
+            return text.toString();
+        }
+
+        // Redraws the list after every button click
+        void refresh() {
+            view.setState(list.toArray(), list.isDoubly());
+        }
+    }
 
 
 

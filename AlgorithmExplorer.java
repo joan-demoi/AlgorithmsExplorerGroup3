@@ -623,7 +623,7 @@ public class AlgorithmExplorer extends JFrame {
         }
     }
 
-
+    //THE STACK PANEL
     static class StackPanel extends StructPanel {
 
         Backend.ArrayStack stack;                              
@@ -684,6 +684,6 @@ public class AlgorithmExplorer extends JFrame {
             view.setState(stack.data, filled, tags, caption);
         }
     }
-    //your code block is ArrayView - the row of boxes that the stack and queues are drawn
-    //with.
+    //Precious, place your code here, it is about linked lists
+    
 }

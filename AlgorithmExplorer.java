@@ -546,7 +546,8 @@ public class AlgorithmExplorer extends JFrame {
             }));
         }
     }
-    // ===== BLOCK 7: Module B - ArrayView (draws a row of boxes) =====
+    //your code block is ArrayView - the row of boxes that the stack and queues are drawn
+    //with.
 
     // Draws an array as a row of boxes: one box for each slot.
     // Filled slots are yellow and show their value; empty slots are white.
@@ -622,10 +623,315 @@ public class AlgorithmExplorer extends JFrame {
         }
     }
 
-    //Arthur you will place your code right below this comment.
+    //Calvin you will place your code right below this comment.
+    //your code is about the stack Panel
     //respect that curly bracket below. do not put any code outside it. all code should be within
     //it. it is for the main class.
 
-    //your code block is ArrayView - the row of boxes that the stack and queues are drawn
-    //with.
+
+    //The Queue Panel, both Linear and circular
+    //Circular panel - true give a linear queue, ture gives a circular queue
+    //
+
+    static class QueuePanel extends StructPanel {
+
+        final boolean circular;
+        Backend.ArrayQueue queue;                                // the real queue, from the back end
+        JTextField capacityField = new JTextField("5", 4);
+        JTextField valueField = new JTextField("", 4);
+        ArrayView view;                                          // the drawing in the middle
+
+        QueuePanel(boolean circular) {
+            super(new ArrayView(), 7);
+            this.circular = circular;
+            view = (ArrayView) centerView;
+
+            // Controls row: capacity box and "Create queue" button
+            controls.add(new JLabel(" Capacity (1-12):"));
+            controls.add(capacityField);
+            addOperation("Create queue", () -> createQueue());
+
+            // Value box and the buttons that work on the queue
+            controls.add(new JLabel(" Value:"));
+            controls.add(valueField);
+            addOperation("Enqueue", () -> enqueue());
+            addOperation("Dequeue", () -> say("Dequeued " + queue.dequeue()));
+            addOperation("Front", () -> say("Front element is " + queue.front() + " (not removed)"));
+            addOperation("Size", () -> say("Size = " + queue.size()));
+            addOperation("is_empty", () -> say("is_empty = " + queue.isEmpty()));
+            addOperation("is_full", () -> say("is_full = " + queue.isFull()));
+            addOperation("Display", () -> display());
+
+            // Start with an empty queue of size 5 so the screen is not blank
+            queue = makeQueue(5);
+            refresh();
+
+            // A hint that tells the user what to try
+            if (circular) {
+                say("Fill the queue, dequeue a few, then enqueue again: rear wraps around to index 0.");
+            } else {
+                say("Try: fill the queue, dequeue a few items, then enqueue again to see the FALSE FULL problem.");
+            }
+        }
+
+        // Makes the right kind of queue depending on which tab this is
+        Backend.ArrayQueue makeQueue(int capacity) {
+            if (circular) {
+                return new Backend.CircularQueue(capacity);
+            } else {
+                return new Backend.LinearQueue(capacity);
+            }
+        }
+
+        // "Create queue" button
+        void createQueue() {
+            int capacity = readInt(capacityField, "Capacity", 1, 12);
+            queue = makeQueue(capacity);
+
+            if (circular) {
+                say("Created an empty circular queue");
+            } else {
+                say("Created an empty linear queue");
+            }
+        }
+
+        // "Enqueue" button: reads the value box and adds that number at the rear
+        void enqueue() {
+            int value = readInt(valueField, "Value", -999999, 999999);
+            queue.enqueue(value);    // throws an error if the queue is full
+            say("Enqueued " + value);
+        }
+
+        // "Display" button: prints the items from the front to the rear
+        void display() {
+            StringBuilder text = new StringBuilder("Queue (front to rear): ");
+
+            if (circular) {
+                // Start at the front and walk forward, wrapping around the end of the array
+                for (int k = 0; k < queue.size(); k++) {
+                    int index = (queue.front + k) % queue.arr.length;
+                    text.append(queue.arr[index]).append(' ');
+                }
+            } else {
+                // In a linear queue the items are simply from front to rear
+                for (int i = queue.front; i <= queue.rear; i++) {
+                    text.append(queue.arr[i]).append(' ');
+                }
+            }
+
+            say(text.toString());
+        }
+
+        // Redraws the queue after every button click
+        void refresh() {
+            int slots = queue.arr.length;
+            boolean[] filled = queue.occupied();
+            String[] tags = new String[slots];
+
+            for (int i = 0; i < slots; i++) {
+                tags[i] = "";
+            }
+
+            // Mark the front and the rear (only when the queue has something in it)
+            if (!queue.isEmpty()) {
+                tags[queue.front] = "front";
+
+                if (queue.front == queue.rear) {
+                    tags[queue.rear] = "front/rear";   // only one item, so it is both
+                } else {
+                    tags[queue.rear] = "rear";
+                }
+            }
+
+            String caption = "front = " + queue.front + ", rear = " + queue.rear
+                    + ", size = " + queue.size() + " / " + slots;
+            view.setState(queue.arr, filled, tags, caption);
+        }
+    }
+
+    //this is the ListView - it draws the linked list as boxes with arrows
+
+    static class ListView extends JPanel {
+
+        int[] values = new int[0];     // the values in the list, from head to the end
+        boolean doubly;                // true = doubly linked (two arrows and a TAIL label)
+
+        // Called by ListPanel whenever the list changes
+        void setState(int[] values, boolean doubly) {
+            this.values = values;
+            this.doubly = doubly;
+            repaint();
+        }
+
+        // Draws a line from (x1, y1) to (x2, y2) with a small arrowhead at the (x2, y2) end
+        void drawArrow(Graphics2D g2, int x1, int y1, int x2, int y2) {
+            g2.drawLine(x1, y1, x2, y2);
+
+            // The arrowhead is a small triangle. Its back edge is on the left of the tip
+            // when the arrow points right, and on the right of the tip when it points left.
+            int direction;
+            if (x2 > x1) {
+                direction = -1;
+            } else {
+                direction = 1;
+            }
+
+            int[] xs = {x2, x2 + direction * 8, x2 + direction * 8};
+            int[] ys = {y2, y2 - 4, y2 + 4};
+            g2.fillPolygon(xs, ys, 3);
+        }
+
+        // Swing calls this automatically whenever the view needs to be redrawn
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);   // smooth edges
+            g2.setColor(Color.BLACK);
+
+            // An empty list has nothing to draw except this message
+            if (values.length == 0) {
+                g2.drawString("HEAD -> null   (the list is empty)", 20, 40);
+                return;
+            }
+
+            int boxWidth = 56;
+            int boxHeight = 36;
+            int gap = 50;                                                       // space between boxes, where the arrows go
+            int perRow = Math.max(1, (getWidth() - 100) / (boxWidth + gap));    // how many nodes fit on one row
+
+            for (int i = 0; i < values.length; i++) {
+                int column = i % perRow;
+                int row = i / perRow;
+
+                int x = 20 + column * (boxWidth + gap);
+                int y = 50 + row * 90;
+                int midY = y + boxHeight / 2;
+
+                // The node: light blue box with a dark outline and its value inside
+                g2.setColor(new Color(200, 225, 255));
+                g2.fillRect(x, y, boxWidth, boxHeight);
+
+                g2.setColor(Color.DARK_GRAY);
+                g2.drawRect(x, y, boxWidth, boxHeight);
+                g2.drawString(String.valueOf(values[i]), x + boxWidth / 2 - 8, midY + 5);
+
+                // Red labels: HEAD on the first node, TAIL on the last node (doubly linked only)
+                g2.setColor(new Color(180, 30, 30));
+                if (i == 0) {
+                    g2.drawString("HEAD", x + 10, y - 8);
+                }
+                if (doubly && i == values.length - 1) {
+                    g2.drawString("TAIL", x + 10, y - 8);
+                }
+
+                // What comes after this node?
+                g2.setColor(Color.BLACK);
+                boolean isLast = (i == values.length - 1);
+                boolean endOfRow = (column == perRow - 1);
+
+                if (isLast) {
+                    g2.drawString("-> null", x + boxWidth + 6, midY + 5);
+                } else if (endOfRow) {
+                    g2.drawString("continues below", x, y + boxHeight + 18);
+                } else if (doubly) {
+                    // Two arrows: one forward (next) and one backward (prev)
+                    drawArrow(g2, x + boxWidth, midY - 6, x + boxWidth + gap, midY - 6);
+                    drawArrow(g2, x + boxWidth + gap, midY + 6, x + boxWidth, midY + 6);
+                } else {
+                    // One arrow forward (next)
+                    drawArrow(g2, x + boxWidth, midY, x + boxWidth + gap, midY);
+                }
+            }
+        }
+    }
+
+    //List Panel - its with the buttons and logic for the singly and doubly linked lists
+    //Precious, this is where you will place your block of code
+
+
+
+    
+
+    //The BracketPanel - is the bracket checker
+    //Joan, you'll place your next block of code here
+
+
+
+
+   //SortView - the drawing class for the sorting bars; it shows the numebrs and vertical bars
+    // SORTING LAB
+    static class SortView extends JPanel {
+
+        int[] values;                 // the numbers to draw
+        int highlightStart = -1;      // bars from highlightStart to highlightEnd are drawn green
+        int highlightEnd = -1;
+
+        // Called by SortingTab for every step of the animation
+        void setState(int[] values, int highlightStart, int highlightEnd) {
+            this.values = values;
+            this.highlightStart = highlightStart;
+            this.highlightEnd = highlightEnd;
+            repaint();
+        }
+
+        // Swing calls this automatically whenever the view needs to be redrawn
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);   // smooth edges
+
+            // The colour guide at the top
+            g2.setColor(Color.BLACK);
+            g2.drawString("Yellow = not yet finalised     Green = just sorted / merged / pivot placed", 10, 16);
+
+            // Nothing to draw until there are numbers
+            if (values == null || values.length == 0) {
+                return;
+            }
+
+            // Find the smallest and largest numbers so the bars can be scaled to fit.
+            // We start from 0 and 1 so the scale is never empty and negative numbers still fit.
+            int min = 0;
+            int max = 1;
+            for (int value : values) {
+                if (value > max) {
+                    max = value;
+                }
+                if (value < min) {
+                    min = value;
+                }
+            }
+
+            int count = values.length;
+            int areaWidth = getWidth() - 20;
+            int areaHeight = getHeight() - 60;
+            double barWidth = areaWidth / (double) count;
+
+            for (int i = 0; i < count; i++) {
+                // The bar height is the number's share of the biggest bar
+                int barHeight = (int) ((values[i] - min + 1) * (double) areaHeight / (max - min + 1));
+
+                int x = 10 + (int) (i * barWidth);
+                int y = getHeight() - 25 - barHeight;
+
+                // Green if this bar is inside the highlighted range, yellow otherwise
+                if (i >= highlightStart && i <= highlightEnd) {
+                    g2.setColor(new Color(76, 175, 80));
+                } else {
+                    g2.setColor(new Color(255, 214, 0));
+                }
+                g2.fillRect(x, y, Math.max(1, (int) barWidth - 1), barHeight);
+
+                // Write the number under the bar, but only when there are few enough bars to read
+                if (count <= 30) {
+                    g2.setColor(Color.BLACK);
+                    g2.drawString(String.valueOf(values[i]), x + 2, getHeight() - 8);
+                }
+            }
+        }
+    }
 }

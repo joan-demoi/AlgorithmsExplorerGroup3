@@ -690,13 +690,51 @@ public class AlgorithmExplorer extends JFrame {
 
     
 
-    //Joan, Place your code here
+ // ===== BLOCK 12: Module B - Bracket checker panel =====
 
+    // Bracket checker: tells you whether an expression like { ( [ ] ) } is balanced.
+    // The stack work is done in Backend.checkBrackets; this panel only shows the result.
+    static class BracketPanel extends JPanel {
 
+        JTextField inputField = new JTextField("{ ( [ ] ) }", 30);
+        JTextArea output = makeOutputArea();
 
+        BracketPanel() {
+            super(new BorderLayout());
 
+            // Top bar: label, input box and the button
+            JPanel topBar = new JPanel();
+            topBar.add(new JLabel("Expression:"));
+            topBar.add(inputField);
+            topBar.add(makeButton("Check if balanced", e -> check()));
 
+            add(topBar, BorderLayout.NORTH);
+            add(new JScrollPane(output), BorderLayout.CENTER);
+        }
 
+        // Runs when the button is clicked
+        void check() {
+            String expression = inputField.getText();
+
+            if (expression.trim().isEmpty()) {
+                output.setText("The expression is empty. Type something like { ( [ ] ) }");
+                return;
+            }
+
+            // The back end fills "trace" with one line for every symbol it reads
+            StringBuilder trace = new StringBuilder();
+            boolean balanced = Backend.checkBrackets(expression, trace);
+
+            String verdict;
+            if (balanced) {
+                verdict = "BALANCED";
+            } else {
+                verdict = "NOT BALANCED";
+            }
+
+            output.setText(trace + "\nRESULT: " + verdict);
+        }
+    }
     
     //The SortingTab
     //It is a very big class so we split it into two blocks

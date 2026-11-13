@@ -1579,6 +1579,248 @@ public class AlgorithmExplorer extends JFrame {
             }
         }
     }
+    // ===== BLOCK 17: Module D - AnalysisTab (timing tests, report and charts) =====
+
+    // The "D: Complexity Analysis" tab.
+    // Times all 6 sorting algorithms on different input sizes and types,
+    // then shows the numbers in a report and draws them as two charts.
+    static class AnalysisTab extends JPanel {
+
+        static final int[] SIZES = {100, 500, 1000, 2000, 5000, 10000, 50000, 100000};
+        static final String[] KINDS = {"Random", "Already sorted", "Reverse sorted"};
+
+        // The numbers for KINDS, so the code below reads better than "kind == 0"
+        static final int RANDOM = 0;
+        static final int SORTED = 1;
+        static final int REVERSE = 2;
+
+        // 6 algorithms: numbers 0, 1, 2 are the O(n^2) sorts and 3, 4, 5 are the O(n log n) sorts
+        static final int ALGORITHMS = 6;
+
+        // results[algorithm][kind][size index] = average time in ms. NaN means "not run".
+        double[][][] results;
+
+        JButton runButton;
+        JLabel statusLabel = new JLabel(" Press the button. This takes roughly half a minute.");
+        JComboBox<String> kindBox = new JComboBox<>(KINDS);
+        JCheckBox logBox = new JCheckBox("Log scale");
+        JTextArea reportArea = makeOutputArea();
+        LineChart quadChart = new LineChart();      // the O(n^2) sorts
+        LineChart fastChart = new LineChart();      // the O(n log n) sorts
+
+        AnalysisTab() {
+            super(new BorderLayout());
+
+            runButton = makeButton("Run full analysis", e -> runAnalysis());
+
+            // Changing the input type or the log scale redraws the charts
+            kindBox.addActionListener(e -> refreshCharts());
+            logBox.addActionListener(e -> refreshCharts());
+
+            // Top bar
+            JPanel topBar = new JPanel(new FlowLayout(FlowLayout.LEFT));
+            topBar.add(runButton);
+            topBar.add(new JLabel("Chart input type:"));
+            topBar.add(kindBox);
+            topBar.add(logBox);
+            topBar.add(statusLabel);
+            add(topBar, BorderLayout.NORTH);
+
+            // The two charts on top of each other
+            JPanel chartsPanel = new JPanel(new GridLayout(2, 1));
+            chartsPanel.add(quadChart);
+            chartsPanel.add(fastChart);
+
+            // Report on the left, charts on the right
+            JSplitPane split = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT, new JScrollPane(reportArea), chartsPanel);
+            split.setResizeWeight(0.5);
+            add(split, BorderLayout.CENTER);
+        }
+
+        // ---------------------------------------------------------------
+        // Running the tests
+        // ---------------------------------------------------------------
+
+        // "Run full analysis" button.
+        // The tests take a while, so they run on a separate thread. If they ran on the
+        // normal Swing thread, the whole window would freeze until they finished.
+        void runAnalysis() {
+            runButton.setEnabled(false);
+
+            // A thread with a big stack, because the recursive sorts can go very deep
+            Thread worker = new Thread(null, () -> {
+                measureEverything();
+
+                // Swing screens must only be updated from the Swing thread, so we hand
+                // the final update over with invokeLater
+                SwingUtilities.invokeLater(() -> {
+                    reportArea.setText(buildReport());
+                    reportArea.setCaretPosition(0);     // scroll back to the top
+                    refreshCharts();
+                    statusLabel.setText(" Done.");
+                    runButton.setEnabled(true);
+                });
+            }, "analysis", 512L * 1024 * 1024);
+
+            worker.start();
+        }
+
+        // Runs every algorithm on every input kind and size and fills the results array
+        void measureEverything() {
+            results = new double[ALGORITHMS][KINDS.length][SIZES.length];
+
+            // Start with NaN everywhere, which means "not run"
+            for (int algorithm = 0; algorithm < ALGORITHMS; algorithm++) {
+                for (int kind = 0; kind < KINDS.length; kind++) {
+                    for (int i = 0; i < SIZES.length; i++) {
+                        results[algorithm][kind][i] = Double.NaN;
+                    }
+                }
+            }
+
+            // Warm-up: run each algorithm once so Java has "warmed up" before we time anything.
+            // These results are thrown away.
+            int[] warmUpData = Backend.randomArray(2000, 100000, 1);
+            for (int algorithm = 0; algorithm < ALGORITHMS; algorithm++) {
+                Backend.avgMillis(algorithm, warmUpData, 2);
+            }
+
+            // The real measurements
+            for (int algorithm = 0; algorithm < ALGORITHMS; algorithm++) {
+                for (int kind = 0; kind < KINDS.length; kind++) {
+                    for (int i = 0; i < SIZES.length; i++) {
+                        int n = SIZES[i];
+
+                        if (shouldSkip(algorithm, kind, n)) {
+                            continue;
+                        }
+
+                        // Tell the user what is running right now
+                        String message = " Running " + Backend.NAMES[algorithm] + ", " + KINDS[kind] + ", n = " + n + " ...";
+                        SwingUtilities.invokeLater(() -> statusLabel.setText(message));
+
+                        int[] data = makeInput(kind, n);
+                        results[algorithm][kind][i] = Backend.avgMillis(algorithm, data, 3);    // average of 3 runs
+                    }
+                }
+            }
+        }
+
+        // Some combinations would take far too long, so we leave them out
+        boolean shouldSkip(int algorithm, int kind, int n) {
+            // The O(n^2) sorts (algorithms 0, 1, 2) only go up to n = 10,000
+            if (algorithm < 3 && n > 10000) {
+                return true;
+            }
+
+            // Quicksort (algorithm 4) always picks the first element as pivot, so on sorted or
+            // reversed data it becomes O(n^2). At 50,000 and above that would take minutes.
+            if (algorithm == 4 && n > 10000 && kind != RANDOM) {
+                return true;
+            }
+
+            return false;
+        }
+
+        // Makes the test data: random, already sorted, or reversed
+        int[] makeInput(int kind, int n) {
+            if (kind == RANDOM) {
+                return Backend.randomArray(n, 1000000, 12345);
+            } else if (kind == SORTED) {
+                return Backend.sortedArray(n);
+            } else {
+                return Backend.reverseArray(n);
+            }
+        }
+
+        // ---------------------------------------------------------------
+        // Showing the results
+        // ---------------------------------------------------------------
+
+        // Turns the results into a text table for the left side
+        String buildReport() {
+            StringBuilder text = new StringBuilder();
+
+            for (int kind = 0; kind < KINDS.length; kind++) {
+                text.append("=== " + KINDS[kind] + " input: average time in ms (3 runs) ===\n");
+
+                // Heading row: the n values
+                text.append(String.format("%-26s", "n"));
+                for (int n : SIZES) {
+                    text.append(String.format("%11d", n));
+                }
+                text.append("\n");
+
+                // One row for each algorithm
+                for (int algorithm = 0; algorithm < ALGORITHMS; algorithm++) {
+                    text.append(String.format("%-26s", Backend.NAMES[algorithm]));
+
+                    for (int i = 0; i < SIZES.length; i++) {
+                        double value = results[algorithm][kind][i];
+
+                        if (Double.isNaN(value)) {
+                            text.append(String.format("%11s", "-"));
+                        } else {
+                            text.append(String.format("%11.3f", value));
+                        }
+                    }
+                    text.append("\n");
+                }
+                text.append("\n");
+            }
+
+            text.append("'-' = not run (O(n^2) sorts stop at n = 10,000; "
+                    + "first-pivot quicksort on sorted/reverse data stops at 10,000 too).\n");
+            return text.toString();
+        }
+
+        // Redraws both charts for the chosen input type and scale
+        void refreshCharts() {
+            // Nothing to draw until the analysis has been run
+            if (results == null) {
+                return;
+            }
+
+            int kind = kindBox.getSelectedIndex();
+            boolean logScale = logBox.isSelected();
+
+            // Chart 1: the O(n^2) sorts (algorithms 0, 1, 2).
+            // They only ran up to n = 10,000, which is the first 6 sizes.
+            int quadPoints = 6;
+            double[] quadX = new double[quadPoints];
+            double[][] quadY = new double[3][quadPoints];
+
+            for (int i = 0; i < quadPoints; i++) {
+                quadX[i] = SIZES[i];
+            }
+            for (int s = 0; s < 3; s++) {
+                for (int i = 0; i < quadPoints; i++) {
+                    quadY[s][i] = results[s][kind][i];
+                }
+            }
+
+            // Chart 2: the O(n log n) sorts (algorithms 3, 4, 5), using all the sizes
+            double[] fastX = new double[SIZES.length];
+            double[][] fastY = new double[3][SIZES.length];
+
+            for (int i = 0; i < SIZES.length; i++) {
+                fastX[i] = SIZES[i];
+            }
+            for (int s = 0; s < 3; s++) {
+                for (int i = 0; i < SIZES.length; i++) {
+                    fastY[s][i] = results[s + 3][kind][i];
+                }
+            }
+
+            String[] quadNames = {Backend.NAMES[0], Backend.NAMES[1], Backend.NAMES[2]};
+            String[] fastNames = {Backend.NAMES[3], Backend.NAMES[4], Backend.NAMES[5]};
+
+            quadChart.setState("O(n^2) sorts - " + KINDS[kind] + " input", quadX, quadNames, quadY, logScale);
+            fastChart.setState("O(n log n) sorts - " + KINDS[kind] + " input", fastX, fastNames, fastY, logScale);
+        }
+    }
+
+}   // <- this is the closing brace of the whole AlgorithmExplorer class. It is the LAST line of the file.
 
     //Arthur, place the code here.
     //it is about the AnalysisTab. it turns every sorting algorithm on different input sizes,

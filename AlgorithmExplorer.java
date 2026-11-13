@@ -546,6 +546,81 @@ public class AlgorithmExplorer extends JFrame {
             }));
         }
     }
+    // ===== BLOCK 7: Module B - ArrayView (draws a row of boxes) =====
+
+    // Draws an array as a row of boxes: one box for each slot.
+    // Filled slots are yellow and show their value; empty slots are white.
+    // It only DRAWS what it is given; the stack/queue panels decide what to show.
+    static class ArrayView extends JPanel {
+
+        int[] values;          // the number in each slot
+        boolean[] filled;      // true if the slot currently holds a value
+        String[] tags;         // small red label above a slot (can be null or empty)
+        String caption = "";   // a line of text drawn under the boxes
+
+        // Called by the panels whenever the structure changes
+        void setState(int[] values, boolean[] filled, String[] tags, String caption) {
+            this.values = values;
+            this.filled = filled;
+            this.tags = tags;
+            this.caption = caption;
+            repaint();
+        }
+
+        // Swing calls this automatically whenever the view needs to be redrawn
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+
+            // Nothing to draw until a structure has been created
+            if (values == null) {
+                return;
+            }
+
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);   // smooth edges
+
+            int slots = values.length;
+            int cellWidth = Math.min(80, (getWidth() - 40) / slots);    // boxes shrink if there are many slots
+            int cellHeight = 50;
+            int startX = (getWidth() - cellWidth * slots) / 2;          // centres the whole row
+            int y = getHeight() / 2 - 25;
+
+            for (int i = 0; i < slots; i++) {
+                int x = startX + i * cellWidth;
+
+                // The box: yellow if it holds a value, white if empty
+                if (filled[i]) {
+                    g2.setColor(new Color(255, 224, 130));
+                } else {
+                    g2.setColor(Color.WHITE);
+                }
+                g2.fillRect(x, y, cellWidth, cellHeight);
+
+                g2.setColor(Color.DARK_GRAY);
+                g2.drawRect(x, y, cellWidth, cellHeight);
+
+                // The value inside the box (only for filled slots)
+                if (filled[i]) {
+                    g2.drawString(String.valueOf(values[i]), x + cellWidth / 2 - 8, y + 30);
+                }
+
+                // The index under the box, e.g. [0], [1], [2]
+                g2.setColor(Color.GRAY);
+                g2.drawString("[" + i + "]", x + cellWidth / 2 - 10, y + 68);
+
+                // The red tag above the box, if this slot has one
+                if (tags[i] != null && !tags[i].isEmpty()) {
+                    g2.setColor(new Color(180, 30, 30));
+                    g2.drawString(tags[i], x + 3, y - 8);
+                }
+            }
+
+            // The caption under the whole row
+            g2.setColor(Color.BLACK);
+            g2.drawString(caption, startX, y + 105);
+        }
+    }
 
     //Arthur you will place your code right below this comment.
     //respect that curly bracket below. do not put any code outside it. all code should be within

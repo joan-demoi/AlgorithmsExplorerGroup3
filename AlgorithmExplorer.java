@@ -1048,7 +1048,397 @@ public class AlgorithmExplorer extends JFrame {
             add(mainSplit, BorderLayout.CENTER);
         }
 
-        //the animation part - preparing the sort, stepping tyhrough it, auto play and "compare all"
-        
+        //the animation part - preparing the sort, stepping through it, auto play and "compare all"
+
+         static class SortResult {
+            long comparisons;
+            long moves;          // swaps or moves, depending on the algorithm
+            long nanos;          // how long it took
+            int[] sortedData;    // the array after sorting
+        }
+
+        // Sorts a COPY of the data with the chosen algorithm and measures it.
+        // Used by both "Run" and "Compare all", so the timing is done the same way each time.
+        SortResult timeSort(int algorithm, int[] data) {
+            SortResult result = new SortResult();
+
+            runWithBigStack(() -> {
+                int[] copy = Backend.copy(data);
+                Backend.Sorter sorter = new Backend.Sorter();
+
+                long start = System.nanoTime();
+                sorter.sort(algorithm, copy);
+                result.nanos = System.nanoTime() - start;
+
+                result.comparisons = sorter.comparisons;
+                result.moves = sorter.moves;
+                result.sortedData = copy;
+            });
+
+            return result;
+        }
+
+        // ---------------------------------------------------------------
+        // Button actions
+        // ---------------------------------------------------------------
+
+        // Runs an action; if the input is bad, shows a pop-up message instead of crashing
+        void guard(Runnable action) {
+            try {
+                action.run();
+            } catch (IllegalArgumentException ex) {
+                autoTimer.stop();
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Input problem", JOptionPane.WARNING_MESSAGE);
+            }
+        }
+
+        // "Generate random" button: fills the numbers box with random numbers
+        void generateRandom() {
+            int count = readInt(randomCountField, "n", 1, 20000);
+            int[] numbers = Backend.randomArray(count, 99, System.nanoTime());
+
+            StringBuilder text = new StringBuilder();
+            for (int i = 0; i < count; i++) {
+                if (i > 0) {
+                    text.append(", ");
+                }
+                text.append(numbers[i]);
+            }
+
+            inputField.setText(text.toString());
+        }
+
+        // "Run (show result)" button: sorts and jumps straight to the last step
+        void runAndShowResult() {
+            prepare();
+            currentFrame = frameCount - 1;
+            showFrame();
+        }
+
+        // "Step >" button: shows the next step
+        void stepForward() {
+            // Nothing prepared yet, or the input/algorithm changed: prepare and show step 0
+            if (frames == null || !currentKey().equals(preparedKey)) {
+                prepare();
+                return;
+            }
+
+            if (currentFrame < frameCount - 1) {
+                currentFrame++;
+                showFrame();
+            }
+        }
+
+        // "Auto-play / Stop" button
+        void toggleAutoPlay() {
+            // If it is already playing, this click stops it
+            if (autoTimer.isRunning()) {
+                autoTimer.stop();
+                return;
+            }
+
+            if (frames == null || !currentKey().equals(preparedKey)) {
+                prepare();
+            }
+
+            // If we were already at the end, play again from the beginning
+            if (currentFrame >= frameCount - 1) {
+                currentFrame = 0;
+                showFrame();
+            }
+
+            autoTimer.start();
+        }
+
+        // "Reset" button: stops playing and goes back to the first step
+        void resetPlayback() {
+            autoTimer.stop();
+
+            if (frames != null) {
+                currentFrame = 0;
+                showFrame();
+            }
+        }
+
+        // "Compare all" button: runs every algorithm on the same numbers and fills the table
+        void compareAll() {
+            int[] data = Backend.parseInts(inputField.getText());
+            compareModel.setRowCount(0);    // clear the old rows
+
+            for (int algorithm = 0; algorithm < Backend.NAMES.length; algorithm++) {
+                SortResult result = timeSort(algorithm, data);
+
+                String timeText = String.format("%.4f", result.nanos / 1e6);
+
+                String correct;
+                if (Backend.isSorted(result.sortedData)) {
+                    correct = "yes";
+                } else {
+                    correct = "NO";
+                }
+
+                compareModel.addRow(new Object[]{
+                        Backend.NAMES[algorithm], result.comparisons, result.moves, timeText, correct});
+            }
+        }
+
+        // ---------------------------------------------------------------
+        // Preparing and showing the steps
+        // ---------------------------------------------------------------
+
+        // Identifies the current input + algorithm, so we know when the saved steps are out of date
+        String currentKey() {
+            return inputField.getText() + "|" + algorithmBox.getSelectedIndex();
+        }
+
+        // Sorts the input twice: once to measure it, and once (small inputs only) to record every step
+        void prepare() {
+            int[] data = Backend.parseInts(inputField.getText());
+            int algorithm = algorithmBox.getSelectedIndex();
+
+            // 1) Measure: count comparisons and moves and time the sort
+            SortResult result = timeSort(algorithm, data);
+
+            // 2) Record the steps for the animation
+            if (data.length <= 200) {
+                Backend.Sorter recorder = new Backend.Sorter();
+                recorder.steps = new Backend.Steps();
+                runWithBigStack(() -> recorder.sort(algorithm, Backend.copy(data)));
+
+                frames = recorder.steps.snaps;
+                highlightStarts = recorder.steps.hi1;
+                highlightEnds = recorder.steps.hi2;
+                notes = recorder.steps.notes;
+                frameCount = recorder.steps.count;
+            } else {
+                // Too many numbers to animate: just show the finished result as one frame
+                frames = new int[][]{result.sortedData};
+                highlightStarts = new int[]{0};
+                highlightEnds = new int[]{data.length - 1};
+                notes = new String[]{"More than 200 numbers: step-by-step display is off, showing the sorted result"};
+                frameCount = 1;
+            }
+
+            metricsLabel.setText(String.format(" %s | n = %d | comparisons = %d | swaps/moves = %d | time = %.4f ms",
+                    Backend.NAMES[algorithm], data.length, result.comparisons, result.moves, result.nanos / 1e6));
+
+            currentFrame = 0;
+            preparedKey = currentKey();
+            showFrame();
+        }
+
+        // Puts the current frame on the screen
+        void showFrame() {
+            view.setState(frames[currentFrame], highlightStarts[currentFrame], highlightEnds[currentFrame]);
+            noteLabel.setText(" Step " + currentFrame + " / " + (frameCount - 1) + ":  " + notes[currentFrame]);
+        }
+      }
+
+    //The LineChart - drawing class behind the two graphs.
+
+    static class LineChart extends JPanel {
+
+        static final Color[] COLORS = {
+                new Color(31, 119, 180),     // blue
+                new Color(214, 39, 40),      // red
+                new Color(44, 160, 44)       // green
+        };
+
+        // What to draw (set by AnalysisTab)
+        String title = "";
+        double[] xValues;          // the n values along the bottom
+        String[] seriesNames;      // the name of each line
+        double[][] yValues;        // yValues[line][i] = time in ms for xValues[i]; NaN means "not measured"
+        boolean logScale;          // true = both axes use a log scale
+
+        // Space left around the plot for the labels
+        int marginLeft = 70;
+        int marginRight = 20;
+        int marginTop = 30;
+        int marginBottom = 40;
+
+        // Worked out every time the chart is painted
+        int plotWidth;
+        int plotHeight;
+        double xMin;
+        double xRange;
+        double yMin;
+        double yRange;
+
+        // Called by AnalysisTab when there is new data
+        void setState(String title, double[] xValues, String[] seriesNames, double[][] yValues, boolean logScale) {
+            this.title = title;
+            this.xValues = xValues;
+            this.seriesNames = seriesNames;
+            this.yValues = yValues;
+            this.logScale = logScale;
+            repaint();
+        }
+
+        // On a log scale we plot log10 of the value instead of the value itself.
+        // (The tiny minimum stops us taking the log of 0.)
+        double transform(double value) {
+            if (logScale) {
+                return Math.log10(Math.max(value, 1e-4));
+            }
+            return value;
+        }
+
+        // Converts a data value into a pixel position on the screen
+        int xToPixel(double x) {
+            return marginLeft + (int) ((transform(x) - xMin) / xRange * plotWidth);
+        }
+
+        int yToPixel(double y) {
+            return getHeight() - marginBottom - (int) ((transform(y) - yMin) / yRange * plotHeight);
+        }
+
+        // Swing calls this automatically whenever the chart needs to be redrawn
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);   // smooth edges
+
+            g2.setColor(Color.BLACK);
+            g2.drawString(title, marginLeft, 18);
+
+            // Nothing to draw until the analysis has been run
+            if (xValues == null) {
+                g2.drawString("Click \"Run full analysis\" to draw this chart.", marginLeft, getHeight() / 2);
+                return;
+            }
+
+            // ---- Work out the range of the x axis ----
+            if (logScale) {
+                xMin = transform(xValues[0]);
+            } else {
+                xMin = 0;
+            }
+            double xMax = transform(xValues[xValues.length - 1]);
+
+            // ---- Work out the range of the y axis by looking at every measured value ----
+            double yMax = -Double.MAX_VALUE;
+            if (logScale) {
+                yMin = Double.MAX_VALUE;
+            } else {
+                yMin = 0;
+            }
+
+            boolean hasData = false;
+            for (double[] line : yValues) {
+                for (double value : line) {
+                    if (!Double.isNaN(value)) {
+                        hasData = true;
+                        yMax = Math.max(yMax, transform(value));
+                        if (logScale) {
+                            yMin = Math.min(yMin, transform(value));
+                        }
+                    }
+                }
+            }
+
+            if (!hasData) {
+                g2.drawString("No data for this input type.", marginLeft, getHeight() / 2);
+                return;
+            }
+
+            // If every value is the same, widen the range a little so we never divide by zero
+            if (yMax - yMin < 1e-9) {
+                yMax = yMin + 1;
+            }
+
+            xRange = xMax - xMin;
+            yRange = yMax - yMin;
+            plotWidth = getWidth() - marginLeft - marginRight;
+            plotHeight = getHeight() - marginTop - marginBottom;
+
+            // ---- Draw everything ----
+            g2.drawRect(marginLeft, marginTop, plotWidth, plotHeight);    // the frame around the plot
+            drawYAxis(g2);
+            drawXAxis(g2);
+            drawLines(g2);
+        }
+
+        // Light grid lines and the numbers down the left side
+        void drawYAxis(Graphics2D g2) {
+            for (int k = 0; k <= 4; k++) {
+                double value = yMin + yRange * k / 4;
+                int y = getHeight() - marginBottom - (int) (k * plotHeight / 4.0);
+
+                g2.setColor(new Color(225, 225, 225));
+                g2.drawLine(marginLeft, y, getWidth() - marginRight, y);
+
+                // On a log scale the axis holds log10 values, so convert back for the label
+                if (logScale) {
+                    value = Math.pow(10, value);
+                }
+                g2.setColor(Color.BLACK);
+                g2.drawString(String.format("%.3g", value), 5, y + 4);
+            }
+
+            g2.drawString("ms", 5, marginTop - 8);
+        }
+
+        // The n values along the bottom and the axis title
+        void drawXAxis(Graphics2D g2) {
+            g2.setColor(Color.BLACK);
+
+            int lastLabelX = -100;
+            for (double x : xValues) {
+                int px = xToPixel(x);
+
+                // Skip a label if it would overlap the previous one
+                if (px - lastLabelX > 42) {
+                    g2.drawString(String.valueOf((long) x), px - 12, getHeight() - marginBottom + 16);
+                    lastLabelX = px;
+                }
+            }
+
+            String axisTitle = "n";
+            if (logScale) {
+                axisTitle += "  (log-log scale)";
+            }
+            g2.drawString(axisTitle, getWidth() / 2, getHeight() - 6);
+        }
+
+        // One coloured line for each algorithm, with a dot at every measured point
+        void drawLines(Graphics2D g2) {
+            for (int s = 0; s < yValues.length; s++) {
+                g2.setColor(COLORS[s % COLORS.length]);
+
+                int prevX = -1;
+                int prevY = -1;
+
+                for (int i = 0; i < xValues.length; i++) {
+                    double y = yValues[s][i];
+
+                    // Points that were not measured (NaN) are skipped
+                    if (!Double.isNaN(y)) {
+                        int px = xToPixel(xValues[i]);
+                        int py = yToPixel(y);
+
+                        if (prevX >= 0) {
+                            g2.drawLine(prevX, prevY, px, py);    // join to the previous point
+                        }
+                        g2.fillOval(px - 3, py - 3, 6, 6);
+
+                        prevX = px;
+                        prevY = py;
+                    }
+                }
+
+                // The legend: the line's name in its own colour, at the top left of the plot
+                g2.drawString(seriesNames[s], marginLeft + 10, marginTop + 16 + s * 16);
+            }
+        }
     }
+
+    //Arthur, place the code here.
+    //it is about the AnalysisTab. it turns every sorting algorithm on different input sizes,
+    //shows the timing report as a table and draws the two charts with the the line chart.
+
+    
+
 }

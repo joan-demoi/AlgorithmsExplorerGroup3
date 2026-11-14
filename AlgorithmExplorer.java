@@ -1579,7 +1579,9 @@ public class AlgorithmExplorer extends JFrame {
             }
         }
     }
-    // ===== BLOCK 17: Module D - AnalysisTab (timing tests, report and charts) =====
+    //Arthur, place the code here.
+    //it is about the AnalysisTab. it turns every sorting algorithm on different input sizes,
+    //shows the timing report as a table and draws the two charts with the the line chart.
 
     // The "D: Complexity Analysis" tab.
     // Times all 6 sorting algorithms on different input sizes and types,
@@ -1819,13 +1821,6 @@ public class AlgorithmExplorer extends JFrame {
             fastChart.setState("O(n log n) sorts - " + KINDS[kind] + " input", fastX, fastNames, fastY, logScale);
         }
     }
-
-}   // <- this is the closing brace of the whole AlgorithmExplorer class. It is the LAST line of the file.
-
-    //Arthur, place the code here.
-    //it is about the AnalysisTab. it turns every sorting algorithm on different input sizes,
-    //shows the timing report as a table and draws the two charts with the the line chart.
-
-    
+   
 
 }

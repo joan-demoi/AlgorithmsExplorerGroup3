@@ -907,6 +907,79 @@ public class main {
 
   //Bracket Checker
   //Arthur place your code below this comment
+    // ===== BACKEND BLOCK B7: Bracket checker (a use of the stack) =====
+
+    // Checks whether an opening bracket and a closing bracket belong together
+    private static boolean matches(char open, char close) {
+        if (open == '(' && close == ')') {
+            return true;
+        }
+        if (open == '[' && close == ']') {
+            return true;
+        }
+        if (open == '{' && close == '}') {
+            return true;
+        }
+        return false;
+    }
+
+    // Is the bracket expression balanced? The idea:
+    //   - when we read an opening bracket, push it on the stack
+    //   - when we read a closing bracket, pop the top of the stack; it must be its partner
+    //   - at the end the stack must be empty
+    // The "trace" gets one line of explanation for every symbol, showing the stack each time.
+    // Time O(n).
+    public static boolean checkBrackets(String expression, StringBuilder trace) {
+        // The stack can never need more room than the length of the expression
+        ArrayStack stack = new ArrayStack(Math.max(1, expression.length()));
+
+        for (int i = 0; i < expression.length(); i++) {
+            char symbol = expression.charAt(i);
+
+            // Spaces are skipped without saying anything
+            if (symbol == ' ') {
+                continue;
+            }
+
+            boolean isOpening = (symbol == '(' || symbol == '[' || symbol == '{');
+            boolean isClosing = (symbol == ')' || symbol == ']' || symbol == '}');
+
+            if (isOpening) {
+                stack.push(symbol);    // the stack holds the character as a number
+                trace.append("Read '" + symbol + "' -> push           stack: " + stack.show(true) + "\n");
+
+            } else if (isClosing) {
+                // A closing bracket with nothing open to match it
+                if (stack.isEmpty()) {
+                    trace.append("Read '" + symbol + "' -> stack is empty, nothing to match with. NOT balanced\n");
+                    return false;
+                }
+
+                char openBracket = (char) stack.pop();
+
+                // The brackets are different kinds, e.g. ( closed by ]
+                if (!matches(openBracket, symbol)) {
+                    trace.append("Read '" + symbol + "' -> popped '" + openBracket + "', they do not match. NOT balanced\n");
+                    return false;
+                }
+
+                trace.append("Read '" + symbol + "' -> matches '" + openBracket + "', pop  stack: " + stack.show(true) + "\n");
+
+            } else {
+                // Letters, numbers, operators and so on do not matter here
+                trace.append("Read '" + symbol + "' -> not a bracket, ignored\n");
+            }
+        }
+
+        // We read everything. Any bracket still on the stack was never closed.
+        if (!stack.isEmpty()) {
+            trace.append("End of input: " + stack.size() + " opening bracket(s) never closed: " + stack.show(true) + "\n");
+            return false;
+        }
+
+        trace.append("End of input: stack is empty\n");
+        return true;
+    }
 
   
 } //kindly leave this bracket untouched. make sure for whatsoever code placement you make, this brace

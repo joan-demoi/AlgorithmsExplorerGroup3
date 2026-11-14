@@ -248,7 +248,285 @@ public class main {
   
   
   //Linked list
-  //Joan place your code below these comments here
+  // ===== BACKEND BLOCK B5: Linked list base class and the singly linked list =====
+
+    // What every linked list in this project can do.
+    // The front end only talks to this type, so it doesn't care whether the list
+    // is singly or doubly linked. "abstract" means each list writes its own versions.
+    public static abstract class LList {
+        public int size;    // how many nodes are in the list
+
+        public abstract void insertBegin(int value);
+        public abstract void insertEnd(int value);
+        public abstract void insertBefore(int target, int value);
+        public abstract void insertAfter(int target, int value);
+        public abstract int deleteBegin();
+        public abstract int deleteEnd();
+        public abstract int deleteBefore(int target);
+        public abstract int deleteAfter(int target);
+        public abstract void deleteValue(int value);
+        public abstract int search(int value);          // the position of the value, or -1 if it is not there
+        public abstract int[] toArray();                // the values from head to end
+        public abstract int[] toArrayBackward();        // the values from tail to head (doubly linked only)
+        public abstract boolean isDoubly();
+
+        // The two errors that every list can throw, so the messages are written only once
+        static IllegalStateException notFound(int target) {
+            return new IllegalStateException("Element " + target + " was not found in the list");
+        }
+
+        static IllegalStateException empty() {
+            return new IllegalStateException("The list is empty");
+        }
+    }
+
+    // One node of the singly linked list: a value and a link to the next node
+    private static class SNode {
+        int value;
+        SNode next;
+
+        SNode(int value) {
+            this.value = value;
+        }
+    }
+
+    // Singly linked list: each node only knows the node AFTER it.
+    // We keep one reference, "head", to the first node.
+    public static class SLinkedList extends LList {
+
+        private SNode head;
+
+        // Finds the first node holding this value, or gives back null if there is none
+        private SNode find(int value) {
+            SNode current = head;
+            while (current != null && current.value != value) {
+                current = current.next;
+            }
+            return current;
+        }
+
+        // ---- Insert ----
+
+        @Override
+        public void insertBegin(int value) {
+            SNode newNode = new SNode(value);
+            newNode.next = head;     // the new node points at the old first node...
+            head = newNode;          // ...and becomes the new first node
+            size++;
+        }
+
+        @Override
+        public void insertEnd(int value) {
+            SNode newNode = new SNode(value);
+
+            if (head == null) {
+                head = newNode;      // the list was empty
+            } else {
+                // Walk to the last node and attach the new node after it
+                SNode current = head;
+                while (current.next != null) {
+                    current = current.next;
+                }
+                current.next = newNode;
+            }
+            size++;
+        }
+
+        @Override
+        public void insertAfter(int target, int value) {
+            SNode targetNode = find(target);
+            if (targetNode == null) {
+                throw notFound(target);
+            }
+
+            SNode newNode = new SNode(value);
+            newNode.next = targetNode.next;
+            targetNode.next = newNode;
+            size++;
+        }
+
+        @Override
+        public void insertBefore(int target, int value) {
+            if (head == null) {
+                throw empty();
+            }
+
+            // If the target is the first node, this is the same as inserting at the beginning
+            if (head.value == target) {
+                insertBegin(value);
+                return;
+            }
+
+            // Walk until "previous" is the node just BEFORE the target
+            SNode previous = head;
+            while (previous.next != null && previous.next.value != target) {
+                previous = previous.next;
+            }
+            if (previous.next == null) {
+                throw notFound(target);
+            }
+
+            SNode newNode = new SNode(value);
+            newNode.next = previous.next;
+            previous.next = newNode;
+            size++;
+        }
+
+        // ---- Delete ----
+
+        @Override
+        public int deleteBegin() {
+            if (head == null) {
+                throw empty();
+            }
+
+            int value = head.value;
+            head = head.next;
+            size--;
+            return value;
+        }
+
+        @Override
+        public int deleteEnd() {
+            if (head == null) {
+                throw empty();
+            }
+
+            // Only one node: the list becomes empty
+            if (head.next == null) {
+                int onlyValue = head.value;
+                head = null;
+                size--;
+                return onlyValue;
+            }
+
+            // Otherwise walk to the second-last node, and cut off the last one
+            SNode previous = head;
+            while (previous.next.next != null) {
+                previous = previous.next;
+            }
+
+            int lastValue = previous.next.value;
+            previous.next = null;
+            size--;
+            return lastValue;
+        }
+
+        @Override
+        public int deleteAfter(int target) {
+            SNode targetNode = find(target);
+            if (targetNode == null) {
+                throw notFound(target);
+            }
+            if (targetNode.next == null) {
+                throw new IllegalStateException("There is no element after " + target);
+            }
+
+            int value = targetNode.next.value;
+            targetNode.next = targetNode.next.next;    // skip over the deleted node
+            size--;
+            return value;
+        }
+
+        @Override
+        public int deleteBefore(int target) {
+            if (head == null) {
+                throw empty();
+            }
+            if (head.value == target) {
+                throw new IllegalStateException("There is no element before " + target);
+            }
+
+            // If the target is the second node, the node before it is the head
+            if (head.next != null && head.next.value == target) {
+                return deleteBegin();
+            }
+
+            // Otherwise walk until the node AFTER "previous" is the one to delete,
+            // which means the node after that is the target
+            SNode previous = head;
+            while (previous.next != null && previous.next.next != null
+                    && previous.next.next.value != target) {
+                previous = previous.next;
+            }
+            if (previous.next == null || previous.next.next == null) {
+                throw notFound(target);
+            }
+
+            int value = previous.next.value;
+            previous.next = previous.next.next;
+            size--;
+            return value;
+        }
+
+        @Override
+        public void deleteValue(int value) {
+            if (head == null) {
+                throw empty();
+            }
+
+            // The value is in the first node
+            if (head.value == value) {
+                deleteBegin();
+                return;
+            }
+
+            // Walk until "previous" is the node just before the one to delete
+            SNode previous = head;
+            while (previous.next != null && previous.next.value != value) {
+                previous = previous.next;
+            }
+            if (previous.next == null) {
+                throw notFound(value);
+            }
+
+            previous.next = previous.next.next;
+            size--;
+        }
+
+        // ---- Search and display ----
+
+        @Override
+        public int search(int value) {
+            int position = 0;
+            SNode current = head;
+
+            while (current != null) {
+                if (current.value == value) {
+                    return position;
+                }
+                current = current.next;
+                position++;
+            }
+
+            return -1;    // not found
+        }
+
+        @Override
+        public int[] toArray() {
+            int[] result = new int[size];
+            int index = 0;
+            SNode current = head;
+
+            while (current != null) {
+                result[index] = current.value;
+                index++;
+                current = current.next;
+            }
+
+            return result;
+        }
+
+        @Override
+        public int[] toArrayBackward() {
+            throw new IllegalStateException("Backward display needs a doubly linked list");
+        }
+
+        @Override
+        public boolean isDoubly() {
+            return false;
+        }
+    }
 
 
 

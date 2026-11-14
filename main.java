@@ -681,8 +681,232 @@ public class main {
         }
     }
 
+  //DOubly Linked Lists
+  private static class DNode {
+        int value;
+        DNode next;
+        DNode prev;
 
+        DNode(int value) {
+            this.value = value;
+        }
+    
+  public static class DLinkedList extends LLists {
+    private DNode head;
+    private DNode tail;
 
+    private DNode find(int value) {
+      DNode current = head;
+      while (current != null  current.value != value) {
+        current = current.next;
+      }
+      return current;
+      
+    }
+
+    private int unlink(DNode node) {
+            // The node before it now skips over it (or, if it was the head, head moves forward)
+            if (node.prev != null) {
+                node.prev.next = node.next;
+            } else {
+                head = node.next;
+            }
+
+            // The node after it now points back past it (or, if it was the tail, tail moves back)
+            if (node.next != null) {
+                node.next.prev = node.prev;
+            } else {
+                tail = node.prev;
+            }
+
+            size--;
+            return node.value;
+        }
+
+        // ---- Insert ----
+
+        @Override
+        public void insertBegin(int value) {
+            DNode newNode = new DNode(value);
+            newNode.next = head;
+
+            if (head != null) {
+                head.prev = newNode;
+            } else {
+                tail = newNode;      // the list was empty, so the new node is also the tail
+            }
+
+            head = newNode;
+            size++;
+        }
+
+        @Override
+        public void insertEnd(int value) {
+            DNode newNode = new DNode(value);
+            newNode.prev = tail;
+
+            if (tail != null) {
+                tail.next = newNode;
+            } else {
+                head = newNode;      // the list was empty, so the new node is also the head
+            }
+
+            tail = newNode;
+            size++;
+        }
+
+        @Override
+        public void insertAfter(int target, int value) {
+            DNode targetNode = find(target);
+            if (targetNode == null) {
+                throw notFound(target);
+            }
+
+            DNode newNode = new DNode(value);
+            newNode.prev = targetNode;
+            newNode.next = targetNode.next;
+
+            if (targetNode.next != null) {
+                targetNode.next.prev = newNode;
+            } else {
+                tail = newNode;      // the target was the last node, so the new node is the new tail
+            }
+
+            targetNode.next = newNode;
+            size++;
+        }
+
+        @Override
+        public void insertBefore(int target, int value) {
+            DNode targetNode = find(target);
+            if (targetNode == null) {
+                throw notFound(target);
+            }
+
+            DNode newNode = new DNode(value);
+            newNode.next = targetNode;
+            newNode.prev = targetNode.prev;
+
+            if (targetNode.prev != null) {
+                targetNode.prev.next = newNode;
+            } else {
+                head = newNode;      // the target was the first node, so the new node is the new head
+            }
+
+            targetNode.prev = newNode;
+            size++;
+        }
+
+        // ---- Delete ----
+
+        @Override
+        public int deleteBegin() {
+            if (head == null) {
+                throw empty();
+            }
+            return unlink(head);
+        }
+
+        @Override
+        public int deleteEnd() {
+            if (tail == null) {
+                throw empty();
+            }
+            return unlink(tail);
+        }
+
+        @Override
+        public int deleteAfter(int target) {
+            DNode targetNode = find(target);
+            if (targetNode == null) {
+                throw notFound(target);
+            }
+            if (targetNode.next == null) {
+                throw new IllegalStateException("There is no element after " + target);
+            }
+            return unlink(targetNode.next);
+        }
+
+        @Override
+        public int deleteBefore(int target) {
+            DNode targetNode = find(target);
+            if (targetNode == null) {
+                throw notFound(target);
+            }
+            if (targetNode.prev == null) {
+                throw new IllegalStateException("There is no element before " + target);
+            }
+            return unlink(targetNode.prev);
+        }
+
+        @Override
+        public void deleteValue(int value) {
+            DNode node = find(value);
+            if (node == null) {
+                throw notFound(value);
+            }
+            unlink(node);
+        }
+
+        // ---- Search and display ----
+
+        @Override
+        public int search(int value) {
+            int position = 0;
+            DNode current = head;
+
+            while (current != null) {
+                if (current.value == value) {
+                    return position;
+                }
+                current = current.next;
+                position++;
+            }
+
+            return -1;    // not found
+        }
+
+        // The values from head to tail
+        @Override
+        public int[] toArray() {
+            int[] result = new int[size];
+            int index = 0;
+            DNode current = head;
+
+            while (current != null) {
+                result[index] = current.value;
+                index++;
+                current = current.next;
+            }
+
+            return result;
+        }
+
+        // The values from tail to head, following the "prev" links
+        @Override
+        public int[] toArrayBackward() {
+            int[] result = new int[size];
+            int index = 0;
+            DNode current = tail;
+
+            while (current != null) {
+                result[index] = current.value;
+                index++;
+                current = current.prev;
+            }
+
+            return result;
+        }
+
+        @Override
+        public boolean isDoubly() {
+            return true;
+        }
+    
+  }
+
+  //Bracket Checker
+  //Arthur place your code below this comment
 
   
 } //kindly leave this bracket untouched. make sure for whatsoever code placement you make, this brace

@@ -241,7 +241,160 @@ public class main {
     }
 
   //The Queues - circular and Linear
-  //Precious place youre code below these comments here
+ // ===== BACKEND BLOCK B4: Queues (shared base class, linear queue, circular queue) =====
+
+    // The part that both queues have in common.
+    // "front" is the index of the first item, "rear" is the index of the last item.
+    // "abstract" means you can't create an ArrayQueue directly: the two queues below
+    // extend it and each writes its own enqueue, dequeue, size and so on.
+    public static abstract class ArrayQueue {
+        public final int[] arr;
+        public int front = 0;
+        public int rear = -1;
+
+        ArrayQueue(int capacity) {
+            if (capacity < 1) {
+                throw new IllegalArgumentException("Capacity must be at least 1.");
+            }
+            arr = new int[capacity];
+        }
+
+        public abstract void enqueue(int value);
+        public abstract int dequeue();
+        public abstract int size();
+        public abstract boolean isFull();
+        public abstract boolean[] occupied();    // which slots hold items right now (used for drawing)
+
+        public boolean isEmpty() {
+            return size() == 0;
+        }
+
+        // Gives back the first item WITHOUT removing it
+        public int front() {
+            if (isEmpty()) {
+                throw new IllegalStateException("Queue is empty, no front element");
+            }
+            return arr[front];
+        }
+    }
+
+    // Linear queue: front and rear only ever move forward.
+    // So when items are dequeued, the free slots at the front can never be used again.
+    public static class LinearQueue extends ArrayQueue {
+
+        public LinearQueue(int capacity) {
+            super(capacity);
+        }
+
+        @Override
+        public void enqueue(int value) {
+            if (rear == arr.length - 1) {
+                // Rear is on the last slot. Is the queue really full, or is it a "false full"?
+                if (front > 0) {
+                    throw new IllegalStateException("FALSE FULL: rear is at the last index, yet " + front
+                            + " slot(s) at the front are free but unusable. "
+                            + "A circular queue fixes this by wrapping rear around.");
+                }
+                throw new IllegalStateException("Queue is full");
+            }
+
+            rear++;
+            arr[rear] = value;
+        }
+
+        @Override
+        public int dequeue() {
+            if (isEmpty()) {
+                throw new IllegalStateException("Queue underflow: the queue is empty");
+            }
+
+            int value = arr[front];
+            front++;
+            return value;
+        }
+
+        @Override
+        public int size() {
+            if (rear >= front) {
+                return rear - front + 1;
+            }
+            return 0;    // front has passed rear, so nothing is left
+        }
+
+        @Override
+        public boolean isFull() {
+            return rear == arr.length - 1;
+        }
+
+        // The items are the slots from front to rear
+        @Override
+        public boolean[] occupied() {
+            boolean[] result = new boolean[arr.length];
+
+            for (int i = front; i <= rear; i++) {
+                result[i] = true;
+            }
+
+            return result;
+        }
+    }
+
+    // Circular queue: the indexes wrap around using modulo (%),
+    // so every free slot can be used again.
+    public static class CircularQueue extends ArrayQueue {
+
+        private int count = 0;    // how many items are in the queue right now
+
+        public CircularQueue(int capacity) {
+            super(capacity);
+        }
+
+        @Override
+        public void enqueue(int value) {
+            if (count == arr.length) {
+                throw new IllegalStateException("Queue is full (circular queue, all " + count + " slots used)");
+            }
+
+            rear = (rear + 1) % arr.length;    // goes back to 0 after the last index
+            arr[rear] = value;
+            count++;
+        }
+
+        @Override
+        public int dequeue() {
+            if (count == 0) {
+                throw new IllegalStateException("Queue underflow: the queue is empty");
+            }
+
+            int value = arr[front];
+            front = (front + 1) % arr.length;
+            count--;
+            return value;
+        }
+
+        @Override
+        public int size() {
+            return count;
+        }
+
+        @Override
+        public boolean isFull() {
+            return count == arr.length;
+        }
+
+        // The items start at front and run for "count" slots, wrapping around the end of the array
+        @Override
+        public boolean[] occupied() {
+            boolean[] result = new boolean[arr.length];
+
+            for (int k = 0; k < count; k++) {
+                int index = (front + k) % arr.length;
+                result[index] = true;
+            }
+
+            return result;
+        }
+    }
 
 
 

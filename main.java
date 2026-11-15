@@ -142,8 +142,8 @@ public class main {
     public final int[] to;
     public int count;   //how many moves have been recorded so far
 
-    purblic Hanoi(int n, int source, int destination, int auxillary) {
-      int totalMove = (1 << n) - 1;
+    public Hanoi(int n, int source, int destination, int auxillary) {
+      int totalMoves = (1 << n) - 1;
       disk = new int[totalMoves];
       from = new int[totalMoves];
       to = new int[totalMoves];
@@ -690,14 +690,15 @@ public class main {
         DNode(int value) {
             this.value = value;
         }
+    }
     
-  public static class DLinkedList extends LLists {
+  public static class DLinkedList extends LList {
     private DNode head;
     private DNode tail;
 
     private DNode find(int value) {
       DNode current = head;
-      while (current != null  current.value != value) {
+      while (current != null && current.value != value) {
         current = current.next;
       }
       return current;
@@ -984,4 +985,3 @@ public class main {
   
 } //kindly leave this bracket untouched. make sure for whatsoever code placement you make, this brace
 //isn't touched. it is for the main class (public class main{}) - hope you get the logic
-

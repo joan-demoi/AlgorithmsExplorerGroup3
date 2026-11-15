@@ -1193,7 +1193,7 @@ public class AlgorithmExplorer extends JFrame {
             row2.add(makeButton("Run (show result)", e -> guard(() -> runAndShowResult())));
             row2.add(makeButton("Step >", e -> guard(() -> stepForward())));
             row2.add(makeButton("Auto-play / Stop", e -> guard(() -> toggleAutoPlay())));
-            row2.add(makeButton("Reset", e -> resetPlayback())));
+            row2.add(makeButton("Reset", e -> resetPlayback()));
             row2.add(makeButton("Compare all", e -> guard(() -> compareAll())));
 
             // Put the two rows on top of each other at the top of the tab

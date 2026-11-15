@@ -32,9 +32,9 @@ public class main {
       return n;
     }
     return fibNaive(n - 1) + fibNaive(n -2);
-  
+
   }
-  
+
   // Fibonacci with memoisation: every answer is saved in "memo", so each sub-problem is solved once.
     // Time O(n), space O(n).
     private static long fibMemo(int n, long[] memo) {
@@ -166,7 +166,7 @@ public class main {
 
       //n - 1 smaller diks from helper peg on top of the big disk
       solve(n - 1, auxillary, destination, source);
-      
+
     }
   }
 
@@ -398,8 +398,8 @@ public class main {
 
 
 
-  
-  
+
+
   //Linked list
   // ===== BACKEND BLOCK B5: Linked list base class and the singly linked list =====
 
@@ -691,7 +691,7 @@ public class main {
             this.value = value;
         }
     }
-    
+
   public static class DLinkedList extends LList {
     private DNode head;
     private DNode tail;
@@ -702,7 +702,7 @@ public class main {
         current = current.next;
       }
       return current;
-      
+
     }
 
     private int unlink(DNode node) {
@@ -903,7 +903,7 @@ public class main {
         public boolean isDoubly() {
             return true;
         }
-    
+
   }
 
   //Bracket Checker
@@ -1200,7 +1200,7 @@ public class main {
             }
         }
    //MERGE SORT
-    
+
     private void mergeSort(int[] array, int[] temp, int low, int high) {
             // One number (or none) is already sorted
             if (low >= high) {
@@ -1291,10 +1291,127 @@ public class main {
             quick(array, smallerEnd + 1, high, randomPivot);
         }
     }
-    
-  //Calvin place your code here below this comment
-  
-    
-  
+
+// ===== BACKEND BLOCK B11: Helpers (input parsing, test data, timing) and the end of the file =====
+
+    // ---------------------------------------------------------------
+    // HELPERS: reading input, making test data, timing (used by Modules C and D)
+    // ---------------------------------------------------------------
+
+    // Turns text like "5, 3 8" into an array of numbers.
+    // If something is wrong, it throws an error with a message the user can understand.
+    public static int[] parseInts(String text) {
+        if (text == null || text.trim().isEmpty()) {
+            throw new IllegalArgumentException(
+                    "The input is empty. Type numbers separated by commas or spaces, or generate random data.");
+        }
+
+        // Split on commas and/or spaces
+        String[] parts = text.trim().split("[,\\s]+");
+
+        if (parts.length > 20000) {
+            throw new IllegalArgumentException("Too many numbers (maximum 20,000).");
+        }
+
+        int[] numbers = new int[parts.length];
+
+        for (int i = 0; i < parts.length; i++) {
+            // We read it as a long first, so a huge number gives our own "out of range"
+            // message below instead of a confusing "not a number" error
+            long value;
+            try {
+                value = Long.parseLong(parts[i]);
+            } catch (NumberFormatException e) {
+                throw new IllegalArgumentException("'" + parts[i] + "' is not a whole number.");
+            }
+
+            if (value < -1000000 || value > 1000000) {
+                throw new IllegalArgumentException("'" + parts[i] + "' is out of range (-1,000,000 to 1,000,000).");
+            }
+
+            numbers[i] = (int) value;
+        }
+
+        return numbers;
+    }
+
+    // Makes a separate copy of an array, so a sort can't change the original
+    public static int[] copy(int[] original) {
+        int[] result = new int[original.length];
+
+        for (int i = 0; i < original.length; i++) {
+            result[i] = original[i];
+        }
+
+        return result;
+    }
+
+    // n random numbers from 1 to bound. Using the same seed gives the same numbers every time,
+    // so tests can be repeated.
+    public static int[] randomArray(int n, int bound, long seed) {
+        Random generator = new Random(seed);
+        int[] numbers = new int[n];
+
+        for (int i = 0; i < n; i++) {
+            numbers[i] = 1 + generator.nextInt(bound);
+        }
+
+        return numbers;
+    }
+
+    // 0, 1, 2, ... n-1  (already sorted)
+    public static int[] sortedArray(int n) {
+        int[] numbers = new int[n];
+
+        for (int i = 0; i < n; i++) {
+            numbers[i] = i;
+        }
+
+        return numbers;
+    }
+
+    // n, n-1, ... 1  (sorted the wrong way round)
+    public static int[] reverseArray(int n) {
+        int[] numbers = new int[n];
+
+        for (int i = 0; i < n; i++) {
+            numbers[i] = n - i;
+        }
+
+        return numbers;
+    }
+
+    // Checks that the numbers are in increasing order
+    public static boolean isSorted(int[] numbers) {
+        for (int i = 1; i < numbers.length; i++) {
+            if (numbers[i - 1] > numbers[i]) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // Average running time in milliseconds over "repeats" runs.
+    // Every run sorts a fresh copy of the source array, so each run starts from the same data.
+    public static double avgMillis(int algorithm, int[] source, int repeats) {
+        long totalNanos = 0;
+
+        for (int run = 0; run < repeats; run++) {
+            int[] copy = copy(source);
+            Sorter sorter = new Sorter();
+
+            long start = System.nanoTime();
+            sorter.sort(algorithm, copy);
+            totalNanos += System.nanoTime() - start;
+        }
+
+        return totalNanos / (double) repeats / 1e6;
+
+
+}   // <- this is the closing brace of the whole Backend class. It is the LAST line of the file.
+
+
+
 } //kindly leave this bracket untouched. make sure for whatsoever code placement you make, this brace
 //isn't touched. it is for the main class (public class main{}) - hope you get the logic

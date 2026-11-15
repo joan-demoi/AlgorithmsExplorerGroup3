@@ -982,6 +982,319 @@ public class main {
         return true;
     }
 
+  //SORTING MODULE - the algorithm names, the complexity table and the Steps class that records
+  //each step for the animation
+
+  public static final String[] NAMES = {
+    "Bubble sort",
+    "Selection sort",
+    "Insertion sort",
+    "Merge sort",
+    "Quicksort (first pivot)",
+    "Quicksort (random pivot)",
+  };
+
+  //complexity table
+  public static final String[][] INFO = {
+        {"Bubble sort", "O(n) (early exit)", "O(n^2)", "O(n^2)", "O(1)", "Yes"},
+        {"Selection sort", "O(n^2)", "O(n^2)", "O(n^2)", "O(1)", "No"},
+        {"Insertion sort", "O(n)", "O(n^2)", "O(n^2)", "O(1)", "Yes"},
+        {"Merge sort", "O(n log n)", "O(n log n)", "O(n log n)", "O(n)", "Yes"},
+        {"Quicksort (first pivot)", "O(n log n)", "O(n log n)", "O(n^2) on sorted input", "O(log n) avg, O(n) worst", "No"},
+        {"Quicksort (random pivot)", "O(n log n)", "O(n log n)", "O(n^2) (very unlikely)", "O(log n) expected", "No"}
+    };
+
+  //records animation of a sort
+  public static class Steps {
+
+        public static final int MAX = 3000;       // stop recording after this many frames, so a long sort can't use up all the memory
+        private static final int START_SIZE = 16; // the arrays start small and grow when they fill up
+
+        public int[][] snaps = new int[START_SIZE][];
+        public String[] notes = new String[START_SIZE];
+        public int[] hi1 = new int[START_SIZE];
+        public int[] hi2 = new int[START_SIZE];
+        public int count;                          // how many frames are saved
+
+        // Saves one frame
+        public void add(int[] array, int highlightFrom, int highlightTo, String note) {
+            if (count >= MAX) {
+                return;
+            }
+            if (count == snaps.length) {
+                grow();
+            }
+
+            // Save a COPY, because the real array keeps changing as the sort goes on
+            int[] copy = new int[array.length];
+            for (int i = 0; i < array.length; i++) {
+                copy[i] = array[i];
+            }
+
+            snaps[count] = copy;
+            notes[count] = note;
+            hi1[count] = highlightFrom;
+            hi2[count] = highlightTo;
+            count++;
+        }
+
+        // Makes all four arrays twice as big and copies the saved frames across
+        private void grow() {
+            int newSize = snaps.length * 2;
+
+            int[][] newSnaps = new int[newSize][];
+            String[] newNotes = new String[newSize];
+            int[] newHi1 = new int[newSize];
+            int[] newHi2 = new int[newSize];
+
+            for (int i = 0; i < count; i++) {
+                newSnaps[i] = snaps[i];
+                newNotes[i] = notes[i];
+                newHi1[i] = hi1[i];
+                newHi2[i] = hi2[i];
+            }
+
+            snaps = newSnaps;
+            notes = newNotes;
+            hi1 = newHi1;
+            hi2 = newHi2;
+        }
+    }
+  // Sorter class
+  public static class Sorter {
+
+        public long comparisons;
+        public long moves;                      // swaps or moves, depending on the algorithm
+        public Steps steps;                     // null = don't record the steps
+        private final Random random = new Random();    // used by quicksort with a random pivot
+
+        // Sorts the array in place using the chosen algorithm.
+        // algorithm: 0 bubble, 1 selection, 2 insertion, 3 merge, 4 quicksort (first pivot), 5 quicksort (random pivot)
+        public void sort(int algorithm, int[] array) {
+            comparisons = 0;
+            moves = 0;
+
+            if (steps != null) {
+                steps.add(array, -1, -1, "Initial array");
+            }
+
+            // An array with 0 or 1 numbers is already sorted
+            if (array.length < 2) {
+                return;
+            }
+
+            switch (algorithm) {
+                case 0:
+                    bubble(array);
+                    break;
+                case 1:
+                    selection(array);
+                    break;
+                case 2:
+                    insertion(array);
+                    break;
+                case 3:
+                    mergeSort(array, new int[array.length], 0, array.length - 1);
+                    break;
+                case 4:
+                    quick(array, 0, array.length - 1, false);
+                    break;
+                default:
+                    quick(array, 0, array.length - 1, true);
+            }
+        }
+
+        // Swaps two numbers in the array and counts it as one move
+        private void swap(int[] array, int i, int j) {
+            if (i == j) {
+                return;    // same position, nothing to do (and not counted)
+            }
+
+            int temp = array[i];
+            array[i] = array[j];
+            array[j] = temp;
+            moves++;
+        }
+
+        // BUBBLE SORT
+        private void bubble(int[] array) {
+            int n = array.length;
+
+            for (int pass = 0; pass < n - 1; pass++) {
+                boolean swapped = false;
+
+                // Compare neighbours; the biggest value "bubbles" to the end of the unsorted part
+                for (int j = 0; j < n - 1 - pass; j++) {
+                    comparisons++;
+                    if (array[j] > array[j + 1]) {
+                        swap(array, j, j + 1);
+                        swapped = true;
+                    }
+                }
+
+                if (steps != null) {
+                    int placedIndex = n - 1 - pass;
+                    steps.add(array, placedIndex, placedIndex,
+                            "After pass " + (pass + 1) + ": the largest remaining value bubbled to index " + placedIndex);
+                }
+
+                // A whole pass with no swaps means the array is already sorted
+                if (!swapped) {
+                    break;
+                }
+            }
+        }
+
+        // SELECTION SORT
+        private void selection(int[] array) {
+            int n = array.length;
+
+            for (int i = 0; i < n - 1; i++) {
+                // Find the smallest value in the part that is not sorted yet
+                int minIndex = i;
+                for (int j = i + 1; j < n; j++) {
+                    comparisons++;
+                    if (array[j] < array[minIndex]) {
+                        minIndex = j;
+                    }
+                }
+
+                // Put it in its final place
+                swap(array, i, minIndex);
+
+                if (steps != null) {
+                    steps.add(array, i, i,
+                            "After pass " + (i + 1) + ": smallest remaining value placed at index " + i);
+                }
+            }
+        }
+
+       // INSERTION SORT
+        private void insertion(int[] array) {
+            for (int i = 1; i < array.length; i++) {
+                int key = array[i];    // the value we are about to insert into the sorted part
+                int j = i - 1;
+
+                // Shift bigger values one place to the right to make a gap for the key
+                while (j >= 0) {
+                    comparisons++;
+                    if (array[j] > key) {
+                        array[j + 1] = array[j];
+                        moves++;
+                        j--;
+                    } else {
+                        break;    // found the right place
+                    }
+                }
+
+                // Drop the key into the gap (unless it did not need to move at all)
+                if (j + 1 != i) {
+                    array[j + 1] = key;
+                    moves++;
+                }
+
+                if (steps != null) {
+                    steps.add(array, 0, i,
+                            "After inserting element " + (i + 1) + ": the first " + (i + 1) + " elements are sorted");
+                }
+            }
+        }
+   //MERGE SORT
+    
+    private void mergeSort(int[] array, int[] temp, int low, int high) {
+            // One number (or none) is already sorted
+            if (low >= high) {
+                return;
+            }
+
+            int mid = (low + high) / 2;
+            mergeSort(array, temp, low, mid);          // sort the left half
+            mergeSort(array, temp, mid + 1, high);     // sort the right half
+
+            // Merge: repeatedly take the smaller of the two front numbers
+            int leftIndex = low;
+            int rightIndex = mid + 1;
+            int tempIndex = low;
+
+            while (leftIndex <= mid && rightIndex <= high) {
+                comparisons++;
+
+                // "<=" (not "<") keeps equal numbers in their original order, which makes the sort stable
+                if (array[leftIndex] <= array[rightIndex]) {
+                    temp[tempIndex] = array[leftIndex];
+                    leftIndex++;
+                } else {
+                    temp[tempIndex] = array[rightIndex];
+                    rightIndex++;
+                }
+                tempIndex++;
+            }
+
+            // One half ran out first; copy whatever is left of the other half
+            while (leftIndex <= mid) {
+                temp[tempIndex] = array[leftIndex];
+                leftIndex++;
+                tempIndex++;
+            }
+            while (rightIndex <= high) {
+                temp[tempIndex] = array[rightIndex];
+                rightIndex++;
+                tempIndex++;
+            }
+
+            // Copy the merged numbers from temp back into the real array
+            for (int index = low; index <= high; index++) {
+                array[index] = temp[index];
+                moves++;
+            }
+
+            if (steps != null) {
+                steps.add(array, low, high, "Merged a[" + low + ".." + high + "]");
+            }
+        }
+
+    //QUICKSORT
+
+    private void quick(int[] array, int low, int high, boolean randomPivot) {
+            if (low >= high) {
+                return;
+            }
+
+            // With a random pivot, swap a random element to the front so it becomes the pivot
+            if (randomPivot) {
+                int randomIndex = low + random.nextInt(high - low + 1);
+                swap(array, low, randomIndex);
+            }
+
+            int pivot = array[low];
+            int smallerEnd = low;
+
+            for (int j = low + 1; j <= high; j++) {
+                comparisons++;
+                if (array[j] < pivot) {
+                    smallerEnd++;
+                    swap(array, smallerEnd, j);
+                }
+            }
+
+            // Put the pivot into its final place
+            swap(array, low, smallerEnd);
+
+            if (steps != null) {
+                steps.add(array, smallerEnd, smallerEnd,
+                        "Partitioned a[" + low + ".." + high + "] around pivot " + pivot
+                        + ", now fixed at index " + smallerEnd);
+            }
+
+            // Sort the two sides separately (the pivot itself is already in place)
+            quick(array, low, smallerEnd - 1, randomPivot);
+            quick(array, smallerEnd + 1, high, randomPivot);
+        }
+    }
+    
+  //Calvin place your code here below this comment
+  
+    
   
 } //kindly leave this bracket untouched. make sure for whatsoever code placement you make, this brace
 //isn't touched. it is for the main class (public class main{}) - hope you get the logic

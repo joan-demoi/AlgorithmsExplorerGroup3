@@ -140,7 +140,7 @@ public class AlgorithmExplorer extends JFrame {
                         continue;
                     }
 
-                    Backend.Run run = Backend.fibonacci(method, n);
+                    main.Run run = main.fibonacci(method, n);
                     text.append(String.format("%-22s %-22s %-14d %s%n",
                             methodNames[method], run.result, run.count, formatTime(run.nanos)
                     ));
@@ -200,8 +200,8 @@ public class AlgorithmExplorer extends JFrame {
                 }
 
                 // Run both versions in the back end
-                Backend.Run recursive = Backend.factorial(true, n);
-                Backend.Run iterative = Backend.factorial(false, n);
+                main.Run recursive = main.factorial(true, n);
+                main.Run iterative = main.factorial(false, n);
 
                 StringBuilder text = new StringBuilder();
 
@@ -237,7 +237,7 @@ public class AlgorithmExplorer extends JFrame {
         JLabel counterLabel = new JLabel(" Press Reset, then Start.");
 
         // The solution and where we are in it
-        Backend.Hanoi solution; // all the moves, worked out by the back end
+        main.Hanoi solution; // all the moves, worked out by the back end
         int currentMove; // how many moves have been shown so far
         int diskCount; // number of disks in the current game
 
@@ -310,7 +310,7 @@ public class AlgorithmExplorer extends JFrame {
             }
 
             diskCount = (Integer) diskSpinner.getValue();
-            solution = new Backend.Hanoi(diskCount, source, dest, aux); // the recursion happens in the back end
+            solution = new main.Hanoi(diskCount, source, dest, aux); // the recursion happens in the back end
             currentMove = 0;
 
             // Empty all three pegs
@@ -427,9 +427,9 @@ public class AlgorithmExplorer extends JFrame {
     // it never moves any disks itself.
     static class HanoiBoard extends JPanel {
 
-        int[][] pegs;                       // same arrays that HanoiPanel uses
+        int[][] pegs;                        // same arrays that HanoiPanel uses
         int[] pegHeights;
-        String[] roles = new String[3];     // "source", "destination" or "auxiliary" for each peg
+        String[] roles = new String[3];      // "source", "destination" or "auxiliary" for each peg
 
         // Called by HanoiPanel.reset() to give the board the new game
         void setState(int[][] pegs, int[] pegHeights, int source, int dest, int aux) {
@@ -457,8 +457,8 @@ public class AlgorithmExplorer extends JFrame {
             g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON); // smooth edges
 
             int width = getWidth();
-            int baseY = getHeight() - 50;     // the y position of the ground
-            int pegWidth = width / 3;         // each peg gets one third of the width
+            int baseY = getHeight() - 50;      // the y position of the ground
+            int pegWidth = width / 3;          // each peg gets one third of the width
 
             for (int p = 0; p < 3; p++) {
                 int centerX = pegWidth * p + pegWidth / 2;
@@ -477,7 +477,7 @@ public class AlgorithmExplorer extends JFrame {
 
                     // Bigger disk number = wider disk
                     int diskWidth = 30 + disk * (pegWidth - 60) / 9;
-                    int y = baseY - (k + 1) * 24;     // every disk is 24 pixels tall
+                    int y = baseY - (k + 1) * 24;      // every disk is 24 pixels tall
 
                     // Each disk gets its own colour, filled first and then outlined
                     g2.setColor(Color.getHSBColor(disk / 9f, 0.55f, 0.95f));
@@ -499,10 +499,10 @@ public class AlgorithmExplorer extends JFrame {
     static class DataStructuresTab extends JTabbedPane {
         DataStructuresTab() {
             addTab("Stack", new StackPanel());
-            addTab("Linear Queue", new QueuePanel());
-            addTab("Circular Queue", new QueuePanel());
-            addTab("Stringly Linked List", new ListPanel());
-            addTab("Doubly Linked List", new ListPanel());
+            addTab("Linear Queue", new QueuePanel(false));
+            addTab("Circular Queue", new QueuePanel(true));
+            addTab("Singly Linked List", new ListPanel(false));
+            addTab("Doubly Linked List", new ListPanel(true));
             addTab("Bracket Checker", new BracketPanel());
         }
     }
@@ -546,8 +546,6 @@ public class AlgorithmExplorer extends JFrame {
             }));
         }
     }
-    //your code block is ArrayView - the row of boxes that the stack and queues are drawn
-    //with.
 
     // Draws an array as a row of boxes: one box for each slot.
     // Filled slots are yellow and show their value; empty slots are white.
@@ -626,10 +624,10 @@ public class AlgorithmExplorer extends JFrame {
     //THE STACK PANEL
     static class StackPanel extends StructPanel {
 
-        Backend.ArrayStack stack;                              
+        main.ArrayStack stack;                             
         JTextField capacityField = new JTextField("6", 4);
         JTextField valueField = new JTextField("", 4);
-        ArrayView view;                                         
+        ArrayView view;                                     
 
         StackPanel() {
             super(new ArrayView(), 7);
@@ -649,13 +647,13 @@ public class AlgorithmExplorer extends JFrame {
             addOperation("is_full", () -> say("is_full = " + stack.isFull()));
             addOperation("Display", () -> say("Stack (bottom to top): " + stack.show(false)));
 
-            stack = new Backend.ArrayStack(6);
+            stack = new main.ArrayStack(6);
             refresh();
         }
 
         void createStack() {
             int capacity = readInt(capacityField, "Capacity", 1, 12);
-            stack = new Backend.ArrayStack(capacity);
+            stack = new main.ArrayStack(capacity);
             say("Created an empty stack with capacity " + stack.data.length);
         }
 
@@ -680,19 +678,19 @@ public class AlgorithmExplorer extends JFrame {
                 }
             }
 
-            String caption = "size = " + stack.size() + " / " + slots + "   top index = " + stack.top;
+            String caption = "size = " + stack.size() + " / " + slots + "    top index = " + stack.top;
             view.setState(stack.data, filled, tags, caption);
         }
     }
 
     //THE QUEUE PANEL
-     static class QueuePanel extends StructPanel {
+    static class QueuePanel extends StructPanel {
 
         final boolean circular;
-        Backend.ArrayQueue queue;                                // the real queue, from the back end
+        main.ArrayQueue queue;                                 // the real queue, from the back end
         JTextField capacityField = new JTextField("5", 4);
         JTextField valueField = new JTextField("", 4);
-        ArrayView view;                                          // the drawing in the middle
+        ArrayView view;                                        // the drawing in the middle
 
         QueuePanel(boolean circular) {
             super(new ArrayView(), 7);
@@ -728,11 +726,11 @@ public class AlgorithmExplorer extends JFrame {
         }
 
         // Makes the right kind of queue depending on which tab this is
-        Backend.ArrayQueue makeQueue(int capacity) {
+        main.ArrayQueue makeQueue(int capacity) {
             if (circular) {
-                return new Backend.CircularQueue(capacity);
+                return new main.CircularQueue(capacity);
             } else {
-                return new Backend.LinearQueue(capacity);
+                return new main.LinearQueue(capacity);
             }
         }
 
@@ -790,7 +788,7 @@ public class AlgorithmExplorer extends JFrame {
                 tags[queue.front] = "front";
 
                 if (queue.front == queue.rear) {
-                    tags[queue.rear] = "front/rear";   // only one item, so it is both
+                    tags[queue.rear] = "front/rear";    // only one item, so it is both
                 } else {
                     tags[queue.rear] = "rear";
                 }
@@ -803,7 +801,6 @@ public class AlgorithmExplorer extends JFrame {
     }
 
     //The ListView - drawing class for linked lists
-
     static class ListView extends JPanel {
 
         int[] values = new int[0];     // the values in the list, from head to the end
@@ -851,7 +848,7 @@ public class AlgorithmExplorer extends JFrame {
 
             int boxWidth = 56;
             int boxHeight = 36;
-            int gap = 50;                                                       // space between boxes, where the arrows go
+            int gap = 50;                                           // space between boxes, where the arrows go
             int perRow = Math.max(1, (getWidth() - 100) / (boxWidth + gap));    // how many nodes fit on one row
 
             for (int i = 0; i < values.length; i++) {
@@ -899,14 +896,14 @@ public class AlgorithmExplorer extends JFrame {
             }
         }
     }
-    
+      
     // ===== BLOCK 11: Module B - Linked list panel (singly and doubly) =====
 
     // Linked list: one panel for BOTH list types.
     // doubly = false gives a singly linked list, doubly = true gives a doubly linked list.
     static class ListPanel extends StructPanel {
 
-        final Backend.LList list;                                // the real list, from the back end
+        main.LList list;                                        // the real list, from the back end
         JTextField valueField = new JTextField("", 4);
         JTextField targetField = new JTextField("", 4);          // used by the "before/after target" buttons
         ListView view;                                           // the drawing in the middle
@@ -917,9 +914,9 @@ public class AlgorithmExplorer extends JFrame {
 
             // Make the right kind of list depending on which tab this is
             if (doubly) {
-                list = new Backend.DLinkedList();
+                list = new main.DLinkedList();
             } else {
-                list = new Backend.SLinkedList();
+                list = new main.SLinkedList();
             }
 
             // Controls row: the two text boxes
@@ -1046,15 +1043,11 @@ public class AlgorithmExplorer extends JFrame {
             view.setState(list.toArray(), list.isDoubly());
         }
     }
-
-
-
-    
-
- // ===== BLOCK 12: Module B - Bracket checker panel =====
+      
+    // ===== BLOCK 12: Module B - Bracket checker panel =====
 
     // Bracket checker: tells you whether an expression like { ( [ ] ) } is balanced.
-    // The stack work is done in Backend.checkBrackets; this panel only shows the result.
+    // The stack work is done in main.checkBrackets; this panel only shows the result.
     static class BracketPanel extends JPanel {
 
         JTextField inputField = new JTextField("{ ( [ ] ) }", 30);
@@ -1084,7 +1077,7 @@ public class AlgorithmExplorer extends JFrame {
 
             // The back end fills "trace" with one line for every symbol it reads
             StringBuilder trace = new StringBuilder();
-            boolean balanced = Backend.checkBrackets(expression, trace);
+            boolean balanced = main.checkBrackets(expression, trace);
 
             String verdict;
             if (balanced) {
@@ -1096,25 +1089,68 @@ public class AlgorithmExplorer extends JFrame {
             output.setText(trace + "\nRESULT: " + verdict);
         }
     }
-    
+      
+    static class SortView extends JPanel {
+        int[] values;
+        int hi1 = -1;
+        int hi2 = -1;
+
+        void setState(int[] values, int hi1, int hi2) {
+            this.values = values;
+            this.hi1 = hi1;
+            this.hi2 = hi2;
+            repaint();
+        }
+
+        @Override
+        protected void paintComponent(Graphics g) {
+            super.paintComponent(g);
+            if (values == null) return;
+
+            Graphics2D g2 = (Graphics2D) g;
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+
+            int n = values.length;
+            int barWidth = Math.max(2, (getWidth() - 40) / n);
+            int startX = (getWidth() - barWidth * n) / 2;
+            int maxHeight = getHeight() - 60;
+
+            int maxVal = 1;
+            for (int v : values) maxVal = Math.max(maxVal, Math.abs(v));
+
+            for (int i = 0; i < n; i++) {
+                int x = startX + i * barWidth;
+                int h = (int) ((double) Math.abs(values[i]) / maxVal * maxHeight);
+                int y = getHeight() - 30 - h;
+
+                if (i >= hi1 && i <= hi2) {
+                    g2.setColor(new Color(46, 125, 50)); // green
+                } else {
+                    g2.setColor(new Color(255, 193, 7)); // yellow
+                }
+                g2.fillRect(x, y, barWidth - 1, h);
+                g2.setColor(Color.DARK_GRAY);
+                g2.drawRect(x, y, barWidth - 1, h);
+            }
+        }
+    }
+
     //The SortingTab
     //It is a very big class so we split it into two blocks
     //FIRST HALF - its fields and the constructor which lays out the screen
-
     static class SortingTab extends JPanel {
 
         //inputs at the top
-      JTextField inputField = new JTextField("64, 34, 25, 12, 22, 11, 90, 5", 32);
-      JTextField randomCountField = new JTextField("10", 5);
-      JComboBox<String> algorithmBox = new JComboBox<>(Backend.NAMES); 
+        JTextField inputField = new JTextField("64, 34, 25, 12, 22, 11, 90, 5", 32);
+        JTextField randomCountField = new JTextField("10", 5);
+        JComboBox<String> algorithmBox = new JComboBox<>(main.NAMES); 
 
-      //whats seen on screen
+        //whats seen on screen
         SortView view = new SortView();
         JLabel noteLabel = new JLabel("");     //describes the current step
         JLabel metricsLabel = new JLabel("");    //comparisons, swaps and time
 
-        
-         // The recorded steps of the current sort. Each step is called a "frame".
+        // The recorded steps of the current sort. Each step is called a "frame".
         int[][] frames;               // frames[i] = how the array looks at step i
         int[] highlightStarts;        // the green range at step i (from...)
         int[] highlightEnds;          // (...to)
@@ -1157,7 +1193,7 @@ public class AlgorithmExplorer extends JFrame {
             row2.add(makeButton("Run (show result)", e -> guard(() -> runAndShowResult())));
             row2.add(makeButton("Step >", e -> guard(() -> stepForward())));
             row2.add(makeButton("Auto-play / Stop", e -> guard(() -> toggleAutoPlay())));
-            row2.add(makeButton("Reset", e -> resetPlayback()));
+            row2.add(makeButton("Reset", e -> resetPlayback())));
             row2.add(makeButton("Compare all", e -> guard(() -> compareAll())));
 
             // Put the two rows on top of each other at the top of the tab
@@ -1179,7 +1215,7 @@ public class AlgorithmExplorer extends JFrame {
 
             // ---- Bottom: the compare table on the left, the complexity table on the right ----
             JTable compareTable = new JTable(compareModel);
-            JTable infoTable = new JTable(Backend.INFO,
+            JTable infoTable = new JTable(main.INFO,
                     new String[]{"Algorithm", "Best", "Average", "Worst", "Extra space", "Stable?"});
 
             JSplitPane bottomSplit = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT,
@@ -1195,7 +1231,7 @@ public class AlgorithmExplorer extends JFrame {
 
         //the animation part - preparing the sort, stepping through it, auto play and "compare all"
 
-         static class SortResult {
+        static class SortResult {
             long comparisons;
             long moves;          // swaps or moves, depending on the algorithm
             long nanos;          // how long it took
@@ -1208,8 +1244,8 @@ public class AlgorithmExplorer extends JFrame {
             SortResult result = new SortResult();
 
             runWithBigStack(() -> {
-                int[] copy = Backend.copy(data);
-                Backend.Sorter sorter = new Backend.Sorter();
+                int[] copy = main.copy(data);
+                main.Sorter sorter = new main.Sorter();
 
                 long start = System.nanoTime();
                 sorter.sort(algorithm, copy);
@@ -1240,7 +1276,7 @@ public class AlgorithmExplorer extends JFrame {
         // "Generate random" button: fills the numbers box with random numbers
         void generateRandom() {
             int count = readInt(randomCountField, "n", 1, 20000);
-            int[] numbers = Backend.randomArray(count, 99, System.nanoTime());
+            int[] numbers = main.randomArray(count, 99, System.nanoTime());
 
             StringBuilder text = new StringBuilder();
             for (int i = 0; i < count; i++) {
@@ -1307,23 +1343,23 @@ public class AlgorithmExplorer extends JFrame {
 
         // "Compare all" button: runs every algorithm on the same numbers and fills the table
         void compareAll() {
-            int[] data = Backend.parseInts(inputField.getText());
+            int[] data = main.parseInts(inputField.getText());
             compareModel.setRowCount(0);    // clear the old rows
 
-            for (int algorithm = 0; algorithm < Backend.NAMES.length; algorithm++) {
+            for (int algorithm = 0; algorithm < main.NAMES.length; algorithm++) {
                 SortResult result = timeSort(algorithm, data);
 
                 String timeText = String.format("%.4f", result.nanos / 1e6);
 
                 String correct;
-                if (Backend.isSorted(result.sortedData)) {
+                if (main.isSorted(result.sortedData)) {
                     correct = "yes";
                 } else {
                     correct = "NO";
                 }
 
                 compareModel.addRow(new Object[]{
-                        Backend.NAMES[algorithm], result.comparisons, result.moves, timeText, correct});
+                        main.NAMES[algorithm], result.comparisons, result.moves, timeText, correct});
             }
         }
 
@@ -1338,7 +1374,7 @@ public class AlgorithmExplorer extends JFrame {
 
         // Sorts the input twice: once to measure it, and once (small inputs only) to record every step
         void prepare() {
-            int[] data = Backend.parseInts(inputField.getText());
+            int[] data = main.parseInts(inputField.getText());
             int algorithm = algorithmBox.getSelectedIndex();
 
             // 1) Measure: count comparisons and moves and time the sort
@@ -1346,9 +1382,9 @@ public class AlgorithmExplorer extends JFrame {
 
             // 2) Record the steps for the animation
             if (data.length <= 200) {
-                Backend.Sorter recorder = new Backend.Sorter();
-                recorder.steps = new Backend.Steps();
-                runWithBigStack(() -> recorder.sort(algorithm, Backend.copy(data)));
+                main.Sorter recorder = new main.Sorter();
+                recorder.steps = new main.Steps();
+                runWithBigStack(() -> recorder.sort(algorithm, main.copy(data)));
 
                 frames = recorder.steps.snaps;
                 highlightStarts = recorder.steps.hi1;
@@ -1365,7 +1401,7 @@ public class AlgorithmExplorer extends JFrame {
             }
 
             metricsLabel.setText(String.format(" %s | n = %d | comparisons = %d | swaps/moves = %d | time = %.4f ms",
-                    Backend.NAMES[algorithm], data.length, result.comparisons, result.moves, result.nanos / 1e6));
+                    main.NAMES[algorithm], data.length, result.comparisons, result.moves, result.nanos / 1e6));
 
             currentFrame = 0;
             preparedKey = currentKey();
@@ -1377,10 +1413,9 @@ public class AlgorithmExplorer extends JFrame {
             view.setState(frames[currentFrame], highlightStarts[currentFrame], highlightEnds[currentFrame]);
             noteLabel.setText(" Step " + currentFrame + " / " + (frameCount - 1) + ":  " + notes[currentFrame]);
         }
-      }
+    }
 
     //The LineChart - drawing class behind the two graphs.
-
     static class LineChart extends JPanel {
 
         static final Color[] COLORS = {
@@ -1579,9 +1614,6 @@ public class AlgorithmExplorer extends JFrame {
             }
         }
     }
-    //Arthur, place the code here.
-    //it is about the AnalysisTab. it turns every sorting algorithm on different input sizes,
-    //shows the timing report as a table and draws the two charts with the the line chart.
 
     // The "D: Complexity Analysis" tab.
     // Times all 6 sorting algorithms on different input sizes and types,
@@ -1682,9 +1714,9 @@ public class AlgorithmExplorer extends JFrame {
 
             // Warm-up: run each algorithm once so Java has "warmed up" before we time anything.
             // These results are thrown away.
-            int[] warmUpData = Backend.randomArray(2000, 100000, 1);
+            int[] warmUpData = main.randomArray(2000, 100000, 1);
             for (int algorithm = 0; algorithm < ALGORITHMS; algorithm++) {
-                Backend.avgMillis(algorithm, warmUpData, 2);
+                main.avgMillis(algorithm, warmUpData, 2);
             }
 
             // The real measurements
@@ -1698,11 +1730,11 @@ public class AlgorithmExplorer extends JFrame {
                         }
 
                         // Tell the user what is running right now
-                        String message = " Running " + Backend.NAMES[algorithm] + ", " + KINDS[kind] + ", n = " + n + " ...";
+                        String message = " Running " + main.NAMES[algorithm] + ", " + KINDS[kind] + ", n = " + n + " ...";
                         SwingUtilities.invokeLater(() -> statusLabel.setText(message));
 
                         int[] data = makeInput(kind, n);
-                        results[algorithm][kind][i] = Backend.avgMillis(algorithm, data, 3);    // average of 3 runs
+                        results[algorithm][kind][i] = main.avgMillis(algorithm, data, 3);    // average of 3 runs
                     }
                 }
             }
@@ -1727,11 +1759,11 @@ public class AlgorithmExplorer extends JFrame {
         // Makes the test data: random, already sorted, or reversed
         int[] makeInput(int kind, int n) {
             if (kind == RANDOM) {
-                return Backend.randomArray(n, 1000000, 12345);
+                return main.randomArray(n, 1000000, 12345);
             } else if (kind == SORTED) {
-                return Backend.sortedArray(n);
+                return main.sortedArray(n);
             } else {
-                return Backend.reverseArray(n);
+                return main.reverseArray(n);
             }
         }
 
@@ -1755,7 +1787,7 @@ public class AlgorithmExplorer extends JFrame {
 
                 // One row for each algorithm
                 for (int algorithm = 0; algorithm < ALGORITHMS; algorithm++) {
-                    text.append(String.format("%-26s", Backend.NAMES[algorithm]));
+                    text.append(String.format("%-26s", main.NAMES[algorithm]));
 
                     for (int i = 0; i < SIZES.length; i++) {
                         double value = results[algorithm][kind][i];
@@ -1814,13 +1846,11 @@ public class AlgorithmExplorer extends JFrame {
                 }
             }
 
-            String[] quadNames = {Backend.NAMES[0], Backend.NAMES[1], Backend.NAMES[2]};
-            String[] fastNames = {Backend.NAMES[3], Backend.NAMES[4], Backend.NAMES[5]};
+            String[] quadNames = {main.NAMES[0], main.NAMES[1], main.NAMES[2]};
+            String[] fastNames = {main.NAMES[3], main.NAMES[4], main.NAMES[5]};
 
             quadChart.setState("O(n^2) sorts - " + KINDS[kind] + " input", quadX, quadNames, quadY, logScale);
             fastChart.setState("O(n log n) sorts - " + KINDS[kind] + " input", fastX, fastNames, fastY, logScale);
         }
     }
-   
-
 }

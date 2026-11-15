@@ -221,10 +221,8 @@ The algorithms and data structures do **not** use `Arrays.sort`, `Collections.so
 - Cormen, T. H., Leiserson, C. E., Rivest, R. L., and Stein, C. _Introduction to Algorithms_. MIT Press.
 - DAA & DSA lecture notes.
 - Oracle. _The Java Tutorials: Swing_. https://docs.oracle.com/javase/tutorial/uiswing/
-- VisuAlgo. (2026). Visualising Data Structures and Algorithms through Animation. https:
-//visualgo.net/
-- GeeksforGeeks. (2026). Data Structures and Algorithms in Java. https://www.geeksforgeeks.
-org/
+- VisuAlgo. (2026). Visualising Data Structures and Algorithms through Animation. https://visualgo.net/
+- GeeksforGeeks. (2026). Data Structures and Algorithms in Java. https://www.geeksforgeeks.org/
 
 ## 11. Repository link
 https://github.com/joan-demoi/AlgorithmsExplorerGroup3

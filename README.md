@@ -1,4 +1,3 @@
-
 # AlgorithmsExplorerGroup3
 DAA Group Project: Interactive Algorithm Explorer – Recursion, Data Structures &amp; Sorting 
 
@@ -13,13 +12,13 @@ Department of Computing and Technology
 
 ## Group Members
 
-| Name                            | Registration Number           | Role / Contribution Area                  |
-|---------------------------------|-------------------------------|-------------------------------------------|
-| Akao Joan Mary Odwee            |  M25B23/025                   | Project coordination, GUI, report         |
-| Nalinda Precious Grace          | M25B23/027                    | Recursion Lab                             |
-|Calvin Ainebyona Nomusinguzi     | S25B23/080                    | Stacks & Queues                           |
-|Isingoma Arthur                  |S25B23/007                     | Linked Lists                              |
-| Mark Trevor Ssali               |S25B23/003                     | Sorting Lab & Time Complexity Analysis    |
+| Name                            | Registration Number           | Role / Contribution Area                                     |
+|---------------------------------|-------------------------------|--------------------------------------------------------------|
+| Akao Joan Mary Odwee            |  M25B23/025                   | Project coordination, GUI, report                            |
+| Nalinda Precious Grace          | M25B23/027                    | Recursion Lab                                                |
+| Calvin Ainebyona Nomusinguzi    | S25B23/080                    | Stacks & Queues                                              |
+| Isingoma Arthur                 | S25B23/007                    | Linked Lists                                                 |
+| Mark Trevor Ssali               | S25B23/003                    | Project coordination, Sorting Lab & Time Complexity Analysis |
 
 ---
 
@@ -48,12 +47,12 @@ Both must print a version number.
 
 ## 2. How to install and run
 
-1. Download or clone this repository so that `Backend.java` and `AlgorithmExplorer.java` are in the **same folder**.
+1. Download or clone this repository so that `main.java` and `AlgorithmExplorer.java` are in the **same folder**.
 2. Open a terminal **inside that folder**.
 3. Compile:
 
 ```
-javac Backend.java AlgorithmExplorer.java
+javac main.java AlgorithmExplorer.java
 ```
 
 4. Run:
@@ -70,19 +69,19 @@ The application window opens. There is nothing else to install.
 ## 3. Project structure
 
 ```
-Backend.java            BACK END: all algorithms and data structures (no screen code)
+main.java               BACK END: all algorithms and data structures (no screen code)
 AlgorithmExplorer.java  FRONT END: the window, buttons, drawings and charts
 README.md               this file
 ```
 
 The back end never touches the interface, so any algorithm can be tested on its own, for example from a small
-`main` method that creates a `Backend.Sorter` and calls `sort(...)`.
+`main` method that creates a `main.Sorter` and calls `sort(...)`.
 
 ### Architecture
 
 ```
-  User  --types input-->  AlgorithmExplorer (front end)  --calls-->  Backend (algorithms + counters)
-  User  <--sees result--  validates, draws, shows charts  <--returns-- result, steps, operation counts
+  User  --types input-->  AlgorithmExplorer (front end)  --calls-->  main (algorithms + counters)
+  User  <--sees result--  validates, draws, shows charts <--returns-- result, steps, operation counts
 ```
 
 ### How a run flows
@@ -151,12 +150,12 @@ After every operation the structure is redrawn and a message such as "Popped 42"
 
 ## 6. The code explained
 
-### Backend.java
+### main.java
 | Part | Purpose |
 |---|---|
-| `Backend.fibonacci(method, n)` | Fibonacci: 0 = naive, 1 = memoised, 2 = bottom-up. Returns a `Run` (result, call count, time). |
-| `Backend.factorial(recursive, n)` | Factorial, recursive or iterative. |
-| `Backend.Hanoi` | Solves Tower of Hanoi recursively and records every move (disk, from, to). |
+| `main.fibonacci(method, n)` | Fibonacci: 0 = naive, 1 = memoised, 2 = bottom-up. Returns a `Run` (result, call count, time). |
+| `main.factorial(recursive, n)` | Factorial, recursive or iterative. |
+| `main.Hanoi` | Solves Tower of Hanoi recursively and records every move (disk, from, to). |
 | `ArrayStack` | Stack on a fixed array. `top` is the index of the top item. |
 | `LinearQueue` | `front` and `rear` only move forward, so freed slots are never reused (false full). |
 | `CircularQueue` | `rear = (rear + 1) % capacity` wraps round. A `count` tells full from empty. |
@@ -211,8 +210,8 @@ The algorithms and data structures do **not** use `Arrays.sort`, `Collections.so
 | Problem | Fix |
 |---|---|
 | `'javac' is not recognized` | Install the JDK, then open a **new** terminal so the PATH change applies. |
-| `Could not find or load main class AlgorithmExplorer` | Run `javac Backend.java AlgorithmExplorer.java` first, from the folder with the files, then `java AlgorithmExplorer` (no `.java` or `.class`). |
-| Errors about `Backend` not found | Compile both files together in one command. |
+| `Could not find or load main class AlgorithmExplorer` | Run `javac main.java AlgorithmExplorer.java` first, from the folder with the files, then `java AlgorithmExplorer` (no `.java` or `.class`). |
+| Errors about `main` not found | Compile both files together in one command. |
 | Module D seems stuck | It is running. The label next to the button shows the current test. Wait for it to finish. |
 | The window is small | Drag it larger. It is resizable. |
 
@@ -220,11 +219,12 @@ The algorithms and data structures do **not** use `Arrays.sort`, `Collections.so
 ## 10. References
 
 - Cormen, T. H., Leiserson, C. E., Rivest, R. L., and Stein, C. _Introduction to Algorithms_. MIT Press.
-- DAA lecture notes.
+- DAA & DSA lecture notes.
 - Oracle. _The Java Tutorials: Swing_. https://docs.oracle.com/javase/tutorial/uiswing/
+- VisuAlgo. (2026). Visualising Data Structures and Algorithms through Animation. https:
+//visualgo.net/
+- GeeksforGeeks. (2026). Data Structures and Algorithms in Java. https://www.geeksforgeeks.
+org/
 
 ## 11. Repository link
-
-
-
-
+https://github.com/joan-demoi/AlgorithmsExplorerGroup3

@@ -12,13 +12,17 @@ Department of Computing and Technology
 
 ## Group Members
 
-| Name                            | Registration Number           | Role / Contribution Area                                     |
-|---------------------------------|-------------------------------|--------------------------------------------------------------|
-| Akao Joan Mary Odwee            |  M25B23/025                   | Project coordination, GUI, report                            |
-| Nalinda Precious Grace          | M25B23/027                    | Recursion Lab                                                |
-| Calvin Ainebyona Nomusinguzi    | S25B23/080                    | Stacks & Queues                                              |
-| Isingoma Arthur                 | S25B23/007                    | Linked Lists                                                 |
-| Mark Trevor Ssali               | S25B23/003                    | Project coordination, Sorting Lab & Time Complexity Analysis |
+## Group Members
+
+| Name | Registration Number | Role / Contribution Area |
+|---|---|---|
+| Akao Joan Mary Odwee | M25B23/025 | Singly linked list implementation, linked-list base class and bracket checker interface, report |
+| Nalinda Precious Grace | M25B23/027 | Queue implementation and singly and doubly linked-list interface, readme |
+| Calvin Ainebyona Nomusinguzi | S25B23/080 | Array-based stack implementation and stack visualization |
+| Isingoma Arthur | S25B23/007 | Bracket-checking logic, array visualization and contributions to complexity analysis |
+| Mark Trevor Ssali | S25B23/003 | Main GUI structure, recursion, Tower of Hanoi, sorting algorithms, sorting visualization and performance analysis |
+
+*Contributions above are summarized from the GitHub commit history. Some features involved contributions from more than one group member.*
 
 ---
 
@@ -79,10 +83,18 @@ The back end never touches the interface, so any algorithm can be tested on its 
 
 ### Architecture
 
-```
-  User  --types input-->  AlgorithmExplorer (front end)  --calls-->  main (algorithms + counters)
-  User  <--sees result--  validates, draws, shows charts <--returns-- result, steps, operation counts
-```
+The application uses two main Java files: `AlgorithmExplorer.java` and `main.java`. They work together to allow users to interact with different algorithms and data structures.
+
+1. The user opens one of the four main sections: Recursion Lab, Data Structures Lab, Sorting Lab or Complexity Analysis.
+2. The user enters values or selects an operation using the graphical interface.
+3. `AlgorithmExplorer.java` receives the input and checks that it is valid.
+4. The frontend calls the appropriate method in `main.java`, where the actual algorithm or data structure operation is performed.
+5. The backend processes the input and returns the result, operation count and other relevant information.
+6. The frontend displays the output through text, tables, diagrams, animations or charts.
+
+For example, when a user enters a number in the Fibonacci section, the interface sends that number to the Fibonacci methods in `main.java`. The backend calculates the result using the selected approach, and the interface displays the results for comparison.
+
+This separation makes the project easier to understand because the algorithm implementations are kept separate from the graphical interface.
 
 ### How a run flows
 

@@ -513,6 +513,11 @@ public class AlgorithmExplorer extends JFrame {
         JPanel controls;
         JComponent centerView;
 
+        // History of every action done with the buttons (newest at the bottom)
+        JTextArea logArea = makeOutputArea();
+        int logCount = 0;
+        String currentButton = "";   // the button that was just clicked
+
         // view - the drawing for this structure
         // columns - how many columns the controls row has
         StructPanel(JComponent view, int columns) {
@@ -524,23 +529,55 @@ public class AlgorithmExplorer extends JFrame {
             messageLabel.setFont(messageLabel.getFont().deriveFont(Font.BOLD, 14f));
             messageLabel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
+            // Bottom area: latest message on top, scrolling history underneath
+            logArea.setRows(7);
+            JScrollPane logScroll = new JScrollPane(logArea);
+            logScroll.setBorder(BorderFactory.createTitledBorder("Summary of actions"));
+            logScroll.setPreferredSize(new Dimension(100, 170));
+
+            JButton clearButton = new JButton("Clear history");
+            clearButton.addActionListener(e -> {
+                logArea.setText("");
+                logCount = 0;
+            });
+
+            JPanel messageRow = new JPanel(new BorderLayout());
+            messageRow.add(messageLabel, BorderLayout.CENTER);
+            messageRow.add(clearButton, BorderLayout.EAST);
+
+            JPanel bottom = new JPanel(new BorderLayout());
+            bottom.add(messageRow, BorderLayout.NORTH);
+            bottom.add(logScroll, BorderLayout.CENTER);
+
             add(controls, BorderLayout.NORTH);
             add(view, BorderLayout.CENTER);
-            add(messageLabel, BorderLayout.SOUTH);
+            add(bottom, BorderLayout.SOUTH);
         }
 
         abstract void refresh(); // each panel redraws its own structure here
 
+        // Adds one numbered line to the history and scrolls down to it
+        void logLine(String text) {
+            logCount++;
+            String tag = currentButton.isEmpty() ? "Info" : currentButton;
+            logArea.append(logCount + ". [" + tag + "] " + text + "\n");
+            logArea.setCaretPosition(logArea.getDocument().getLength());
+        }
+
         void say(String text) {
-            messageLabel.setText("" + text); // shows a message on the bottom line
+            messageLabel.setText(" " + text); // shows a message on the bottom line
+            logLine(text);                    // and records it in the history
         }
 
         void addOperation(String label, Runnable action) {
             controls.add(makeButton(label, e -> {
+                currentButton = label;
                 try {
                     action.run();
                 } catch (RuntimeException ex) {
-                    messageLabel.setText("\u26a0 " + ex.getMessage());
+                    String problem = "\u26a0 " + ex.getMessage();
+                    messageLabel.setText(" " + problem);
+                    logLine(problem);
                 }
                 refresh();
             }));
